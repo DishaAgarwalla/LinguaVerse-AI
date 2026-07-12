@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  avatar      String?
+  role        UserRole @default(USER)
+  isVerified  Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  translations Translation[]
+  speeches     Speech[]
+}
+
+model Translation {
+  id         String   @id @default(cuid())
+
+  sourceText String
+  translated String
+
+  sourceLang String
+  targetLang String
+
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Speech {
+  id               String   @id @default(cuid())
+
+  originalText     String
+  translatedText   String
+
+  detectedLanguage String
+  targetLanguage   String
+
+  audioUrl         String?
+
+  createdAt        DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
