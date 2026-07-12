@@ -1,5 +1,15 @@
 # 🌍 LinguaVerse AI
 
+<p align="center">
+
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=FFD43B)
+
+</p>
+
 An AI-powered multilingual translation platform built with the MERN stack, TypeScript, and Python.
 
 LinguaVerse AI aims to provide a unified platform for text, speech, document, and image translation while making communication accessible across multiple languages.
@@ -64,109 +74,4 @@ LinguaVerse AI aims to provide a unified platform for text, speech, document, an
 - Python
 - Argos Translate (Offline Translation)
 
----
-
-# 📁 Project Structure
-
-```text
-LinguaVerse-AI
-│
-├── client/
-│   ├── src/
-│   ├── public/
-│   └── package.json
-│
-├── server/
-│   ├── prisma/
-│   ├── python/
-│   ├── src/
-│   └── package.json
-│
-└── README.md
-```
-
----
-
-# ⚙️ Installation
-
-## Clone Repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/LinguaVerse-AI.git
-cd LinguaVerse-AI
-```
-
----
-
-## Frontend
-
-```bash
-cd client
-npm install
-npm run dev
-```
-
-Runs on
-
-```
-http://localhost:5173
-```
-
----
-
-## Backend
-
-```bash
-cd server
-npm install
-npm run dev
-```
-
-Runs on
-
-```
-http://localhost:5000
-```
-
----
-
-# 📌 Current Progress
-
-- ✅ Project Setup
-- ✅ Authentication System
-- ✅ Routing & Layout
-- ✅ Landing Page
-- ✅ Dashboard UI
-- ✅ Shared Components & Utilities
-- 🚧 Translation Modules (In Progress)
-
----
-
-# 🤝 Contributing
-
-Contributions, suggestions, and feature requests are welcome.
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Open a Pull Request
-
----
-
-# 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-# 👩‍💻 Author
-
-**Disha Agarwalla**
-
-GitHub: https://github.com/DishaAgarwalla
-
-LinkedIn: https://www.linkedin.com/in/disha-agarwalla-10884b31b/
-
----
-
-⭐ If you like this project, consider giving it a star!
+...
