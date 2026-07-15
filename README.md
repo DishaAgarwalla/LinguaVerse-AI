@@ -644,32 +644,6 @@ Future Improvements
 
 ---
 
-# 🚀 Deployment (Upcoming)
-
-### Frontend
-
-- Vercel
-
-### Backend
-
-- Railway
-- Render
-
-### Database
-
-- Neon PostgreSQL
-- Supabase PostgreSQL
-
-### Media Storage
-
-- Cloudinary
-
-### Containerization
-
-- Docker
-
----
-
 # 🤝 Contributing
 
 Contributions are always welcome!
