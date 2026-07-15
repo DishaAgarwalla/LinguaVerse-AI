@@ -7,60 +7,143 @@
 <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white"/>
 <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white"/>
 <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=FFD43B"/>
+<img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white"/>
+<img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white"/>
 
 </p>
 
-An AI-powered multilingual translation platform built with the MERN stack, TypeScript, and Python.
+<p align="center">
 
-LinguaVerse AI aims to provide a unified platform for text, speech, document, and image translation while making communication accessible across multiple languages.
+<h3 align="center">
+🌐 AI-Powered Universal Translation & Accessibility Platform
+</h3>
 
-> 🚧 This project is currently under active development.
-
----
-
-## ✨ Current Features
-
-- 🔐 JWT Authentication
-- 👤 User Registration & Login
-- 🏠 Modern Landing Page
-- 📊 Responsive Dashboard
-- 🧭 Protected Routing
-- 🎨 Reusable UI Components
-- 📱 Responsive Design
-- ⚡ TypeScript Support
-- 🔄 REST API Architecture
+</p>
 
 ---
 
-## 🚀 Upcoming Features
+# 🚀 Overview
 
-- 🌐 AI Text Translation
-- 🎤 Speech-to-Text Translation
-- 🔊 Text-to-Speech
-- 📄 PDF & DOCX Translation
-- 🖼 OCR Image Translation
-- 💬 Real-Time Chat Translation
-- 📜 Translation History
+LinguaVerse AI is a full-stack AI-powered multilingual translation platform designed to eliminate language barriers through intelligent translation technologies.
+
+The platform supports text translation, speech translation, OCR image translation, document translation, multilingual chat, authentication, translation history, and several upcoming AI accessibility features.
+
+Unlike traditional translators, LinguaVerse AI is designed as a complete communication platform with AI assistance and accessibility tools.
+
+---
+
+# ✨ Features
+
+## 🔐 Authentication
+
+- JWT Authentication
+- User Registration
+- User Login
+- Password Encryption (bcrypt)
+- Protected Routes
+- Role-based User Model
+
+---
+
+## 🌐 AI Translation
+
+- ✅ Text Translation
+- ✅ Automatic Language Detection
+- ✅ Offline Translation using Argos Translate
+- ✅ Multiple Language Support
+- ✅ Translation History
+
+---
+
+## 🎤 Speech Translation
+
+- Browser Speech Recognition
+- Speech → Text
+- AI Translation
+- Multi-language Support
+
+---
+
+## 🖼 OCR Translation
+
+- OCR using Tesseract.js
+- Image Text Extraction
+- Image Translation
+- Translation History
+
+---
+
+## 📄 Document Translation
+
+- PDF Translation
+- DOCX Translation
+- Automatic Text Extraction
+- AI Translation
+- Translation History
+
+---
+
+## 💬 Real-Time Chat
+
+- Socket.IO Integration
+- Multilingual Chat
+- Live Translation
+- Multiple Chat Rooms
+
+---
+
+## 👤 User Dashboard
+
+- Dashboard
+- Translation History
+- Profile
+- Settings
+
+---
+
+## 🎨 UI
+
+- Responsive Design
+- Modern UI
+- Tailwind CSS
+- React Components
+- Protected Routing
+
+---
+
+# 🚧 Upcoming Features
+
 - 🤟 Sign Language Translation
 - 🎥 Live Subtitle Translation
+- 🔊 Text-to-Speech
+- 🎙 Whisper Speech Recognition
 - 📚 Vocabulary Learning
 - 🤖 AI Grammar Correction
 - 😊 Tone Adjustment
+- 📑 Meeting Summaries
+- 🔍 Semantic Search
+- 🌍 Live Camera Translation
+- 📱 Mobile Responsive Improvements
+- ☁ Cloud Deployment
 
 ---
 
 # 🛠 Tech Stack
 
-### Frontend
+## Frontend
 
 - React 19
 - TypeScript
 - Vite
 - Tailwind CSS
-- React Router
+- React Router v7
 - Axios
+- React Hook Form
+- Zod
 
-### Backend
+---
+
+## Backend
 
 - Node.js
 - Express.js
@@ -68,11 +151,18 @@ LinguaVerse AI aims to provide a unified platform for text, speech, document, an
 - Prisma ORM
 - PostgreSQL
 - JWT Authentication
+- Socket.IO
+- Multer
 
-### AI & Translation
+---
+
+## AI & Translation
 
 - Python
-- Argos Translate (Offline Translation)
+- Argos Translate
+- Tesseract OCR
+- Mammoth
+- pdf-parse
 
 ---
 
@@ -80,29 +170,121 @@ LinguaVerse AI aims to provide a unified platform for text, speech, document, an
 
 ```text
 LinguaVerse-AI
+
+├── client
+│   ├── public
+│   ├── src
+│   │
+│   ├── assets
+│   ├── components
+│   │   ├── auth
+│   │   ├── chat
+│   │   ├── dashboard
+│   │   ├── document
+│   │   ├── history
+│   │   ├── home
+│   │   ├── ocr
+│   │   ├── profile
+│   │   ├── speech
+│   │   ├── translate
+│   │   └── ui
+│   │
+│   ├── constants
+│   ├── hooks
+│   ├── layouts
+│   ├── pages
+│   ├── routes
+│   ├── services
+│   ├── types
+│   └── utils
 │
-├── client/
-│   ├── src/
-│   ├── public/
-│   └── package.json
-│
-├── server/
-│   ├── prisma/
-│   ├── python/
-│   ├── src/
-│   └── package.json
+├── server
+│   ├── prisma
+│   ├── python
+│   ├── uploads
+│   ├── src
+│   │
+│   ├── config
+│   ├── controllers
+│   ├── middleware
+│   ├── routes
+│   ├── services
+│   ├── socket
+│   ├── validation
+│   └── server.ts
 │
 └── README.md
 ```
 
 ---
 
-# ⚙️ Installation
+# 🗄 Database
+
+Current Database Models
+
+- User
+- Translation
+- Speech
+- ChatRoom
+- ChatMessage
+
+Built using
+
+- PostgreSQL
+- Prisma ORM
+
+---
+
+# 🌐 REST APIs
+
+### Authentication
+
+```
+POST /api/auth/register
+POST /api/auth/login
+GET  /api/auth/profile
+```
+
+### Translation
+
+```
+POST /api/translate
+```
+
+### OCR
+
+```
+POST /api/ocr
+```
+
+### Document
+
+```
+POST /api/documents
+```
+
+### Speech
+
+```
+POST /api/speech/translate
+```
+
+### Chat
+
+```
+GET  /api/chat/rooms
+POST /api/chat/create
+```
+
+---
+
+# ⚙ Installation
 
 ## Clone Repository
 
 ```bash
 git clone https://github.com/DishaAgarwalla/LinguaVerse-AI.git
+
 cd LinguaVerse-AI
 ```
 
@@ -112,11 +294,13 @@ cd LinguaVerse-AI
 
 ```bash
 cd client
+
 npm install
+
 npm run dev
 ```
 
-Runs on
+Runs at
 
 ```
 http://localhost:5173
@@ -128,11 +312,13 @@ http://localhost:5173
 
 ```bash
 cd server
+
 npm install
+
 npm run dev
 ```
 
-Runs on
+Runs at
 
 ```
 http://localhost:5000
@@ -140,32 +326,106 @@ http://localhost:5000
 
 ---
 
-# 📌 Current Progress
+# 📊 Current Progress
 
-- ✅ Project Setup
-- ✅ Authentication System
-- ✅ Routing & Layout
-- ✅ Landing Page
-- ✅ Dashboard UI
-- ✅ Shared Components & Utilities
-- 🚧 Translation Modules (In Progress)
+## Completed
+
+- Project Architecture
+- JWT Authentication
+- User Management
+- PostgreSQL Integration
+- Prisma ORM
+- Protected Routes
+- Landing Page
+- Dashboard
+- Text Translation
+- Speech Translation
+- OCR Translation
+- Document Translation
+- Translation History
+- Socket.IO Chat
+- Responsive UI
+
+---
+
+## In Progress
+
+- Sign Language Translation
+- Live Subtitle Translation
+- Grammar Correction
+- Tone Adjustment
+- AI Explanation
+- Vocabulary Learning
+- Semantic Search
+
+---
+
+# 🔮 Future Roadmap
+
+### Phase 1 ✅
+
+- Authentication
+- Dashboard
+- Translation
+
+### Phase 2 ✅
+
+- Speech
+- OCR
+- Documents
+
+### Phase 3 🚧
+
+- AI Assistant
+- Grammar
+- Tone
+- Summaries
+
+### Phase 4 🚧
+
+- Sign Language AI
+- Live Subtitles
+- Accessibility
+
+### Phase 5 🚧
+
+- Cloud Deployment
+- Mobile App
+- AI Learning
 
 ---
 
 # 🤝 Contributing
 
-Contributions, suggestions, and feature requests are welcome.
+Contributions are welcome!
 
 1. Fork the repository
+
 2. Create a feature branch
-3. Commit your changes
-4. Open a Pull Request
+
+```bash
+git checkout -b feature-name
+```
+
+3. Commit changes
+
+```bash
+git commit -m "Added new feature"
+```
+
+4. Push
+
+```bash
+git push origin feature-name
+```
+
+5. Open a Pull Request
 
 ---
 
 # 📄 License
 
-This project is licensed under the MIT License.
+Licensed under the MIT License.
 
 ---
 
@@ -173,10 +433,20 @@ This project is licensed under the MIT License.
 
 **Disha Agarwalla**
 
-GitHub: https://github.com/DishaAgarwalla
+GitHub
 
-LinkedIn: https://www.linkedin.com/in/disha-agarwalla-10884b31b/
+https://github.com/DishaAgarwalla
+
+LinkedIn
+
+https://www.linkedin.com/in/disha-agarwalla-10884b31b/
 
 ---
 
+<p align="center">
+
 ⭐ If you like this project, consider giving it a star!
+
+Made with ❤️ using React, Node.js, TypeScript & Python.
+
+</p>
