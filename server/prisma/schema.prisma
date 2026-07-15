@@ -13,23 +13,24 @@ enum UserRole {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  name        String
-  email       String   @unique
-  password    String
-  avatar      String?
-  role        UserRole @default(USER)
-  isVerified  Boolean  @default(false)
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  avatar     String?
+  role       UserRole @default(USER)
+  isVerified Boolean  @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   translations Translation[]
   speeches     Speech[]
+  messages     ChatMessage[]
 }
 
 model Translation {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
   sourceText String
   translated String
@@ -40,22 +41,49 @@ model Translation {
   createdAt DateTime @default(now())
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Speech {
-  id               String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  originalText     String
-  translatedText   String
+  originalText   String
+  translatedText String
 
   detectedLanguage String
   targetLanguage   String
 
-  audioUrl         String?
+  audioUrl String?
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatRoom {
+  id   String @id @default(cuid())
+  name String
+
+  createdAt DateTime @default(now())
+
+  messages ChatMessage[]
+}
+
+model ChatMessage {
+  id String @id @default(cuid())
+
+  originalText   String
+  translatedText String
+
+  sourceLang String
+  targetLang String
+
+  createdAt DateTime @default(now())
+
+  roomId String
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }

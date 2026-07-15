@@ -14,6 +14,13 @@ export const translate = async (
 ): Promise<TranslateResponse> => {
   const token = localStorage.getItem("token");
 
+  console.log("=================================");
+  console.log("FRONTEND TRANSLATION REQUEST");
+  console.log("Text   :", sourceText);
+  console.log("Source :", sourceLang);
+  console.log("Target :", targetLang);
+  console.log("=================================");
+
   const { data } = await axios.post(
     API,
     {
@@ -27,6 +34,11 @@ export const translate = async (
       },
     }
   );
+
+  console.log("=================================");
+  console.log("FRONTEND TRANSLATION RESPONSE");
+  console.log(data);
+  console.log("=================================");
 
   return data;
 };

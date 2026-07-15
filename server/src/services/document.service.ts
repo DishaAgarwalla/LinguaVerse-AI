@@ -1,50 +1,35 @@
-import pdf from "pdf-parse";
-import mammoth from "mammoth";
+import axios from "axios";
 
-import prisma from "../config/prisma";
-import { translateText } from "./translate.service";
+const API_URL = "http://localhost:5000/api/documents";
 
-export const processDocument = async (
-  file: Express.Multer.File,
+export interface DocumentResponse {
+  success: boolean;
+  extractedText: string;
+  translated: string;
+}
+
+export const uploadDocument = async (
+  file: File,
   targetLang: string,
-  userId: string
-) => {
+  token: string
+): Promise<DocumentResponse> => {
+  const formData = new FormData();
 
-  let extractedText = "";
+  formData.append("file", file);
+  formData.append("targetLang", targetLang);
 
-  if (file.mimetype === "application/pdf") {
+  const { data } = await axios.post<DocumentResponse>(
+    API_URL,
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-    const data = await pdf(file.buffer);
+  console.log("DOCUMENT RESPONSE");
+  console.log(data);
 
-extractedText = data.text;
-
-  } else {
-
-    const result = await mammoth.extractRawText({
-      buffer: file.buffer,
-    });
-
-    extractedText = result.value;
-  }
-
-  const translated = await translateText(
-  extractedText,
-  "English",
-  targetLang
-);
-
-  await prisma.translation.create({
-    data: {
-      userId,
-      sourceText: extractedText,
-      translated,
-      sourceLang: "English",
-      targetLang,
-    },
-  });
-
-  return {
-    extractedText,
-    translated,
-  };
+  return data;
 };

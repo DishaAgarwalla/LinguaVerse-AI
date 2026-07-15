@@ -6,6 +6,7 @@ import {
   FiImage,
   FiFileText,
   FiMic,
+  FiMessageCircle,
 } from "react-icons/fi";
 
 const Sidebar = () => {
@@ -16,6 +17,7 @@ const Sidebar = () => {
       </h2>
 
       <nav className="space-y-3">
+
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>
@@ -42,6 +44,20 @@ const Sidebar = () => {
         >
           <FiGlobe />
           Translate
+        </NavLink>
+
+        <NavLink
+          to="/chat"
+          className={({ isActive }) =>
+            `flex items-center gap-3 rounded-lg p-3 transition ${
+              isActive
+                ? "bg-blue-600 text-white"
+                : "hover:bg-gray-100"
+            }`
+          }
+        >
+          <FiMessageCircle />
+          Chat
         </NavLink>
 
         <NavLink
@@ -99,6 +115,7 @@ const Sidebar = () => {
           <FiClock />
           History
         </NavLink>
+
       </nav>
     </aside>
   );

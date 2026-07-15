@@ -9,8 +9,8 @@ const TranslateCard = () => {
   const [sourceText, setSourceText] = useState("");
   const [translated, setTranslated] = useState("");
 
-  const [sourceLang, setSourceLang] = useState("English");
-  const [targetLang, setTargetLang] = useState("Hindi");
+  const [sourceLang, setSourceLang] = useState("en");
+const [targetLang, setTargetLang] = useState("hi");
 
   const [loading, setLoading] = useState(false);
 

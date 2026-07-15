@@ -3,9 +3,8 @@ import argostranslate.translate
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-installed_languages = argostranslate.translate.get_installed_languages()
 if len(sys.argv) < 4:
-    print("Usage: python translate.py <text> <source_lang> <target_lang>")
+    print("Usage: python translate.py <text> <source> <target>")
     sys.exit(1)
 
 text = sys.argv[1]
@@ -13,54 +12,71 @@ text = sys.argv[1]
 source_code = sys.argv[2].strip().lower()
 target_code = sys.argv[3].strip().lower()
 
+# Auto fallback
+if source_code == "auto":
+    source_code = "en"
+
+installed_languages = argostranslate.translate.get_installed_languages()
+
 language_map = {
-    "english": "en",
-    "en": "en",
-    "en-us": "en",
-    "en-gb": "en",
-
-    "hindi": "hi",
-    "hi": "hi",
-    "hi-in": "hi",
-
-    "french": "fr",
-    "fr": "fr",
-    "fr-fr": "fr",
-
-    "spanish": "es",
-    "es": "es",
-    "es-es": "es",
-
-    "german": "de",
-    "de": "de",
-    "de-de": "de",
+    lang.code: lang
+    for lang in installed_languages
 }
 
-source_code = language_map.get(source_code, source_code)
-target_code = language_map.get(target_code, target_code)
-
-from_lang = next(
-    (lang for lang in installed_languages if lang.code == source_code),
-    None,
-)
-
-to_lang = next(
-    (lang for lang in installed_languages if lang.code == target_code),
-    None,
-)
-
-if from_lang is None:
+if source_code not in language_map:
     print(f"Source language '{source_code}' is not installed.")
     sys.exit(1)
 
-if to_lang is None:
+if target_code not in language_map:
     print(f"Target language '{target_code}' is not installed.")
     sys.exit(1)
 
+from_lang = language_map[source_code]
+to_lang = language_map[target_code]
+
+# Same language
+if source_code == target_code:
+    print(text)
+    sys.exit(0)
+
+# -------------------------
+# Direct Translation
+# -------------------------
+
 translation = from_lang.get_translation(to_lang)
 
-if translation is None:
-    print(f"No translation available from {source_code} to {target_code}.")
+if translation:
+    print(translation.translate(text))
+    sys.exit(0)
+
+# -------------------------
+# English Bridge
+# Example:
+# Hindi -> English -> French
+# -------------------------
+
+english = language_map.get("en")
+
+if english is None:
+    print("English package is not installed.")
     sys.exit(1)
 
-print(translation.translate(text))
+# source -> english
+step1 = from_lang.get_translation(english)
+
+# english -> target
+step2 = english.get_translation(to_lang)
+
+if step1 and step2:
+    english_text = step1.translate(text)
+    final_text = step2.translate(english_text)
+
+    print(final_text)
+    sys.exit(0)
+
+print(
+    f"No translation path available from "
+    f"{source_code} to {target_code}."
+)
+
+sys.exit(1)

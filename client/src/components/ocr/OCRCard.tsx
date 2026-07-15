@@ -13,8 +13,9 @@ const OCRCard = () => {
 
   const [preview, setPreview] = useState("");
 
+  // Use language CODE
   const [targetLang, setTargetLang] =
-    useState("Hindi");
+    useState("hi");
 
   const [loading, setLoading] = useState(false);
 
@@ -41,10 +42,9 @@ const OCRCard = () => {
       setExtractedText(res.extractedText);
 
       setTranslatedText(res.translated);
-
     } catch (err) {
       console.error(err);
-      alert("OCR failed.");
+      alert("OCR translation failed.");
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,19 @@ const OCRCard = () => {
       <button
         onClick={handleUpload}
         disabled={loading}
-        className="mt-6 rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white hover:bg-blue-700"
+        className="
+          mt-6
+          rounded-xl
+          bg-blue-600
+          px-8
+          py-3
+          font-semibold
+          text-white
+          transition
+          hover:bg-blue-700
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+        "
       >
         {loading
           ? "Processing..."

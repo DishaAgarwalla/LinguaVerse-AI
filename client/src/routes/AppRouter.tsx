@@ -16,21 +16,28 @@ import OCR from "../pages/dashboard/OCR";
 import Documents from "../pages/dashboard/Documents";
 import Speech from "../pages/speech/Speech";
 
+import Chat from "../pages/chat/Chat";
+
 const AppRouter = () => {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* ================= Public Routes ================= */}
+
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Register />} />
+
         <Route
           path="/forgot-password"
           element={<ForgotPassword />}
         />
       </Route>
 
-      {/* Protected Dashboard Routes */}
+      {/* ================= Protected Routes ================= */}
+
       <Route
         element={
           <ProtectedRoute>
@@ -38,12 +45,42 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/translate" element={<Translate />} />
-        <Route path="/ocr" element={<OCR />} />
-        <Route path="/speech" element={<Speech />} />
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/history" element={<History />} />
+        <Route
+          path="/dashboard"
+          element={<Dashboard />}
+        />
+
+        <Route
+          path="/translate"
+          element={<Translate />}
+        />
+
+        <Route
+          path="/ocr"
+          element={<OCR />}
+        />
+
+        <Route
+          path="/speech"
+          element={<Speech />}
+        />
+
+        <Route
+          path="/documents"
+          element={<Documents />}
+        />
+
+        <Route
+          path="/history"
+          element={<History />}
+        />
+
+        {/* NEW */}
+
+        <Route
+          path="/chat"
+          element={<Chat />}
+        />
       </Route>
     </Routes>
   );

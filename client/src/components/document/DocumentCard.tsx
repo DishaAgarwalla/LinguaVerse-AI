@@ -4,69 +4,86 @@ import DocumentUploader from "./DocumentUploader";
 import DocumentResult from "./DocumentResult";
 import DocumentActions from "./DocumentActions";
 
+import LanguageSelector from "../translate/LanguageSelector";
+
 import { uploadDocument } from "../../services/documentService";
 
 const DocumentCard = () => {
   const [file, setFile] = useState<File | null>(null);
 
-  const [language, setLanguage] = useState("Hindi");
+  // Use language CODE instead of language name
+  const [language, setLanguage] = useState("hi");
 
   const [loading, setLoading] = useState(false);
 
   const [result, setResult] = useState<any>(null);
 
   const translate = async () => {
-    if (!file) {
-      alert("Select a document first.");
-      return;
-    }
+  if (!file) {
+    alert("Please select a document first.");
+    return;
+  }
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const token = localStorage.getItem("token") || "";
+    const token = localStorage.getItem("token") || "";
 
-      const data = await uploadDocument(
-        file,
-        language,
-        token
-      );
+    const response = await uploadDocument(
+      file,
+      language,
+      token
+    );
 
-      setResult(data);
-    } catch (error) {
-      console.error(error);
-      alert("Translation failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    console.log("Frontend Response");
+    console.log(response);
 
+    setResult({
+      extractedText: response.extractedText,
+      translated: response.translated,
+    });
+
+  } catch (error) {
+    console.error(error);
+    alert("Document translation failed.");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
-    <div className="rounded-xl bg-white p-8 shadow space-y-6">
+    <div className="space-y-6 rounded-xl bg-white p-8 shadow">
 
       <DocumentUploader
         file={file}
         setFile={setFile}
       />
 
-      <select
-        value={language}
-        onChange={(e) =>
-          setLanguage(e.target.value)
-        }
-        className="rounded border p-3"
-      >
-        <option>Hindi</option>
-        <option>Spanish</option>
-        <option>French</option>
-        <option>German</option>
-        <option>Japanese</option>
-      </select>
+      <div>
+        <label className="mb-2 block text-sm font-medium">
+          Target Language
+        </label>
+
+        <LanguageSelector
+          value={language}
+          onChange={setLanguage}
+        />
+      </div>
 
       <button
         onClick={translate}
         disabled={loading}
-        className="rounded-lg bg-blue-600 px-6 py-3 text-white"
+        className="
+          rounded-lg
+          bg-blue-600
+          px-6
+          py-3
+          font-semibold
+          text-white
+          transition
+          hover:bg-blue-700
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+        "
       >
         {loading
           ? "Translating..."

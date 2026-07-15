@@ -1,4 +1,5 @@
 import { Response } from "express";
+
 import { AuthRequest } from "../middleware/auth.middleware";
 import { processOCR } from "../services/ocr.service";
 import { ocrSchema } from "../validation/ocr.validation";
@@ -11,7 +12,7 @@ export const ocr = async (
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "Image is required",
+        message: "Image is required.",
       });
     }
 
@@ -23,15 +24,19 @@ export const ocr = async (
       req.user!.id
     );
 
-    res.json({
+    return res.status(200).json({
       success: true,
-      ...result,
+      extractedText: result.extractedText,
+      translated: result.translated,
     });
 
   } catch (error: any) {
-    res.status(500).json({
+    console.error("OCR Error:", error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message:
+        error.message || "OCR translation failed.",
     });
   }
 };

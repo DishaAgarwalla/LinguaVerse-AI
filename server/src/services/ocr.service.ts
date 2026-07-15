@@ -1,5 +1,6 @@
 import Tesseract from "tesseract.js";
 import fs from "fs";
+
 import prisma from "../config/prisma";
 import { translateText } from "./translate.service";
 
@@ -8,21 +9,54 @@ export const processOCR = async (
   targetLang: string,
   userId: string
 ) => {
-  const result = await Tesseract.recognize(imagePath, "eng");
+  try {
+    // OCR
+    const result = await Tesseract.recognize(
+      imagePath,
+      "eng"
+    );
 
-  const extractedText = result.data.text.trim();
+    const extractedText = result.data.text.trim();
 
-  const translated = await translateText(
-    extractedText,
-    "English",
-    targetLang,
-    userId
-  );
+    if (!extractedText) {
+      throw new Error(
+        "No text could be extracted from the image."
+      );
+    }
 
-  fs.unlinkSync(imagePath);
+    // Translate using language codes
+    const translated = await translateText(
+      extractedText,
+      "en",
+      targetLang
+    );
 
-  return {
-    extractedText,
-    translated,
-  };
+    // Save history
+    await prisma.translation.create({
+      data: {
+        userId,
+        sourceText: extractedText,
+        translated,
+        sourceLang: "en",
+        targetLang,
+      },
+    });
+
+    // Delete uploaded image
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+
+    return {
+      extractedText,
+      translated,
+    };
+  } catch (error) {
+    // Delete image even if OCR fails
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+
+    throw error;
+  }
 };
