@@ -26,7 +26,13 @@ model User {
 
   translations Translation[]
   speeches     Speech[]
-  messages     ChatMessage[]
+  ocrHistory   OCRHistory[]
+  documents    DocumentHistory[]
+  grammar      GrammarHistory[]
+  tones        ToneHistory[]
+  explanations ExplainHistory[]
+
+  messages ChatMessage[]
 }
 
 model Translation {
@@ -61,8 +67,91 @@ model Speech {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model OCRHistory {
+  id String @id @default(cuid())
+
+  imageName String?
+
+  extractedText  String
+  translatedText String
+
+  sourceLang String
+  targetLang String
+
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DocumentHistory {
+  id String @id @default(cuid())
+
+  fileName String
+  fileType String
+
+  extractedText  String
+  translatedText String
+
+  sourceLang String
+  targetLang String
+
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GrammarHistory {
+  id String @id @default(cuid())
+
+  originalText  String
+  correctedText String
+
+  language String
+
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ToneHistory {
+  id String @id @default(cuid())
+
+  originalText    String
+  transformedText String
+
+  language String
+  tone     String
+
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExplainHistory {
+  id String @id @default(cuid())
+
+  word     String
+  language String
+
+  meaning       String
+  pronunciation String
+  grammar       String
+  example       String
+  tips          String
+
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model ChatRoom {
-  id   String @id @default(cuid())
+  id String @id @default(cuid())
+
   name String
 
   createdAt DateTime @default(now())
