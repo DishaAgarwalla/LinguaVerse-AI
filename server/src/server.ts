@@ -13,6 +13,8 @@ import documentRoutes from "./routes/document.routes";
 import speechRoutes from "./routes/speech.routes";
 import chatRoutes from "./routes/chat.routes";
 import historyRoutes from "./routes/history.routes";
+import explainRoutes from "./routes/explain.routes";
+
 dotenv.config();
 
 const app = express();
@@ -52,6 +54,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/speech", speechRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/history", historyRoutes);
+app.use("/api/explain", explainRoutes);
 
 const PORT = Number(process.env.PORT) || 5000;
 
