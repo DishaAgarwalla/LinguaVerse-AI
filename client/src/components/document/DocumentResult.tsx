@@ -16,10 +16,10 @@ const DocumentResult = ({
         </h2>
 
         <textarea
-          readOnly
-          value={extractedText}
-          className="h-96 w-full rounded border p-4"
-        />
+  readOnly
+  value={extractedText}
+  className="h-[500px] w-full rounded border p-4 overflow-y-auto resize-none"
+/>
       </div>
 
       <div>
@@ -28,10 +28,10 @@ const DocumentResult = ({
         </h2>
 
         <textarea
-          readOnly
-          value={translated}
-          className="h-96 w-full rounded border p-4"
-        />
+  readOnly
+  value={translated}
+  className="h-[500px] w-full rounded border p-4 overflow-y-auto resize-none"
+/>
       </div>
 
     </div>
