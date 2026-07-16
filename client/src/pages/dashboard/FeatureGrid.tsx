@@ -6,6 +6,7 @@ import {
   FaHistory,
   FaUser,
   FaFileAlt,
+  FaBrain,
 } from "react-icons/fa";
 
 import FeatureCard from "./FeatureCard";
@@ -38,6 +39,13 @@ const features = [
     icon: FaFileAlt,
     color: "bg-red-600",
     link: "/documents",
+  },
+  {
+    title: "AI Explain",
+    description: "Explain difficult words and sentences using AI.",
+    icon: FaBrain,
+    color: "bg-cyan-600",
+    link: "/explain",
   },
   {
     title: "History",

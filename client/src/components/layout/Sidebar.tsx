@@ -7,6 +7,7 @@ import {
   FiFileText,
   FiMic,
   FiMessageCircle,
+  FiBookOpen,
 } from "react-icons/fi";
 
 const Sidebar = () => {
@@ -101,6 +102,20 @@ const Sidebar = () => {
           <FiFileText />
           Documents
         </NavLink>
+
+        <NavLink
+  to="/explain"
+  className={({ isActive }) =>
+    `flex items-center gap-3 rounded-lg p-3 transition ${
+      isActive
+        ? "bg-blue-600 text-white"
+        : "hover:bg-gray-100"
+    }`
+  }
+>
+  <FiBookOpen />
+  AI Explain
+</NavLink>
 
         <NavLink
           to="/history"

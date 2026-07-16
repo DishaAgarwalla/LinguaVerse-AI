@@ -14,16 +14,19 @@ import Translate from "../pages/dashboard/Translate";
 import History from "../pages/dashboard/History";
 import OCR from "../pages/dashboard/OCR";
 import Documents from "../pages/dashboard/Documents";
-import Speech from "../pages/speech/Speech";
+import Explain from "../pages/dashboard/Explain";
 
+import Speech from "../pages/speech/Speech";
 import Chat from "../pages/chat/Chat";
 
 const AppRouter = () => {
   return (
     <Routes>
+
       {/* ================= Public Routes ================= */}
 
       <Route element={<PublicLayout />}>
+
         <Route path="/" element={<Home />} />
 
         <Route path="/login" element={<Login />} />
@@ -34,6 +37,7 @@ const AppRouter = () => {
           path="/forgot-password"
           element={<ForgotPassword />}
         />
+
       </Route>
 
       {/* ================= Protected Routes ================= */}
@@ -45,6 +49,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       >
+
         <Route
           path="/dashboard"
           element={<Dashboard />}
@@ -75,13 +80,18 @@ const AppRouter = () => {
           element={<History />}
         />
 
-        {/* NEW */}
-
         <Route
           path="/chat"
           element={<Chat />}
         />
+
+        <Route
+          path="/explain"
+          element={<Explain />}
+        />
+
       </Route>
+
     </Routes>
   );
 };
