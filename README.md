@@ -239,22 +239,6 @@ http://localhost:5000
 
 ---
 
-# 🔑 Environment Variables
-
-Create a `.env` file inside **server/**
-
-```env
-DATABASE_URL=your_database_url
-
-JWT_SECRET=your_secret_key
-
-GROQ_API_KEY=your_groq_api_key
-
-PORT=5000
-```
-
----
-
 # 📊 Project Status
 
 | Module | Status |
