@@ -1,8 +1,11 @@
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
+import http from "http";
 
 let io: Server;
 
-export const initializeSocket = (server: any) => {
+export const initializeSocket = (
+  server: http.Server
+) => {
   io = new Server(server, {
     cors: {
       origin: [
@@ -13,38 +16,47 @@ export const initializeSocket = (server: any) => {
     },
   });
 
-  io.on("connection", (socket: Socket) => {
-    console.log(`🟢 User Connected: ${socket.id}`);
+  io.on("connection", (socket) => {
+    console.log("✅ Socket Connected:", socket.id);
 
     socket.on("join-room", (roomId: string) => {
       socket.join(roomId);
-
       console.log(`${socket.id} joined ${roomId}`);
     });
 
     socket.on("leave-room", (roomId: string) => {
       socket.leave(roomId);
+      console.log(`${socket.id} left ${roomId}`);
     });
 
-    socket.on("typing", (roomId: string) => {
-      socket.to(roomId).emit("typing");
-    });
-
-    socket.on("stop-typing", (roomId: string) => {
-      socket.to(roomId).emit("stop-typing");
-    });
+    socket.on(
+      "typing",
+      (data: {
+        roomId: string;
+        username: string;
+      }) => {
+        socket
+          .to(data.roomId)
+          .emit("user-typing", data);
+      }
+    );
 
     socket.on("disconnect", () => {
-      console.log(`🔴 User Disconnected: ${socket.id}`);
+      console.log("❌ Socket Disconnected:", socket.id);
     });
   });
 
   return io;
 };
 
-export const getIO = () => {
+/**
+ * Returns the initialized Socket.IO instance
+ */
+export const getIO = (): Server => {
   if (!io) {
-    throw new Error("Socket.IO not initialized.");
+    throw new Error(
+      "Socket.io has not been initialized."
+    );
   }
 
   return io;

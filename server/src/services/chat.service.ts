@@ -154,9 +154,15 @@ export const sendMessage = async ({
       .emit("receive-message", chatMessage);
 
     return chatMessage;
-  } catch (error) {
-    console.error("❌ Chat Service Error");
-    console.error(error);
-    throw error;
-  }
-};
+  } catch (error: any) {
+  console.error("=================================");
+  console.error("❌ CHAT SERVICE ERROR");
+  console.error("=================================");
+  console.error(error);
+  console.error("Message:", error?.message);
+  console.error("Code:", error?.code);
+  console.error("Meta:", error?.meta);
+  console.error("=================================");
+
+  throw error;
+}}
