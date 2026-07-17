@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
-import type { Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 
 import {
   connectSocket,
   disconnectSocket,
-} from "../services/socket";
+} from "../services/socketService";
 
-const useSocket = () => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+export default function useSocket() {
+  const [socket, setSocket] =
+    useState<Socket | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
     if (!token) return;
 
-    const newSocket = connectSocket(token);
+    const s = connectSocket(token);
 
-    setSocket(newSocket);
+    setSocket(s);
 
     return () => {
       disconnectSocket();
@@ -24,6 +25,4 @@ const useSocket = () => {
   }, []);
 
   return socket;
-};
-
-export default useSocket;
+}
