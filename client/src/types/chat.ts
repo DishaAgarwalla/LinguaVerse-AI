@@ -1,13 +1,13 @@
-export interface ChatUser {
-  id: string;
-  name: string;
-  email: string;
-}
-
 export interface ChatRoom {
   id: string;
   name: string;
   createdAt: string;
+}
+
+export interface ChatUser {
+  id: string;
+  name: string;
+  email: string;
 }
 
 export interface ChatMessage {
@@ -22,22 +22,16 @@ export interface ChatMessage {
   createdAt: string;
 
   roomId: string;
+  senderId: string;
 
   sender: ChatUser;
-}
-
-export interface CreateRoomRequest {
-  name: string;
 }
 
 export interface SendMessageRequest {
   roomId: string;
   message: string;
-
   sourceLang: string;
   targetLang: string;
-
-  grammar: boolean;
-
-  tone: "normal" | "formal" | "casual";
+  grammar?: boolean;
+  tone?: "normal" | "formal" | "casual";
 }

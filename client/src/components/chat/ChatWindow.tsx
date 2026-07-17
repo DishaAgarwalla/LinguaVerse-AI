@@ -1,10 +1,7 @@
-import { useEffect, useRef } from "react";
-
+import ChatMessages from "./ChatMessages";
 import type { ChatMessage } from "../../types/chat";
 
-import MessageBubble from "./MessageBubble";
-
-interface ChatWindowProps {
+interface Props {
   messages: ChatMessage[];
   currentUserId: string;
 }
@@ -12,32 +9,13 @@ interface ChatWindowProps {
 export default function ChatWindow({
   messages,
   currentUserId,
-}: ChatWindowProps) {
-  const bottomRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
-  }, [messages]);
-
+}: Props) {
   return (
-    <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-4">
-      {messages.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-gray-400">
-          No messages yet.
-        </div>
-      ) : (
-        messages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            currentUserId={currentUserId}
-          />
-        ))
-      )}
-
-      <div ref={bottomRef} />
+    <div className="flex flex-1 flex-col">
+      <ChatMessages
+        messages={messages}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import MessageInput from "../../components/chat/MessageInput";
 import EmptyChat from "../../components/chat/EmptyChat";
 import CreateRoomButton from "../../components/chat/CreateRoomButton";
 import CreateRoomModal from "../../components/chat/CreateRoomModal";
+import TypingIndicator from "../../components/chat/TypingIndicator";
 
 import {
   createRoom,
@@ -50,6 +51,9 @@ export default function Chat() {
 
   const [showModal, setShowModal] =
     useState(false);
+
+  const [typingUser, setTypingUser] =
+    useState("");
 
   useEffect(() => {
     loadRooms();
@@ -115,20 +119,14 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    if (!selectedRoom) return;
+    if (!selectedRoom || !socket) return;
 
     loadMessages(selectedRoom.id);
 
-    socket?.emit(
-      "join-room",
-      selectedRoom.id
-    );
+    socket.emit("join-room", selectedRoom.id);
 
     return () => {
-      socket?.emit(
-        "leave-room",
-        selectedRoom.id
-      );
+      socket.emit("leave-room", selectedRoom.id);
     };
   }, [selectedRoom, socket]);
 
@@ -144,15 +142,35 @@ export default function Chat() {
       ]);
     };
 
+    const receiveTyping = (data: {
+      username: string;
+    }) => {
+      setTypingUser(data.username);
+
+      setTimeout(() => {
+        setTypingUser("");
+      }, 1200);
+    };
+
     socket.on(
       "receive-message",
       receiveMessage
+    );
+
+    socket.on(
+      "user-typing",
+      receiveTyping
     );
 
     return () => {
       socket.off(
         "receive-message",
         receiveMessage
+      );
+
+      socket.off(
+        "user-typing",
+        receiveTyping
       );
     };
   }, [socket]);
@@ -226,12 +244,18 @@ export default function Chat() {
                 Loading messages...
               </div>
             ) : (
-              <ChatWindow
-                messages={messages}
-                currentUserId={
-                  currentUserId
-                }
-              />
+              <>
+                <ChatWindow
+                  messages={messages}
+                  currentUserId={
+                    currentUserId
+                  }
+                />
+
+                <TypingIndicator
+                  username={typingUser}
+                />
+              </>
             )}
 
             <MessageInput

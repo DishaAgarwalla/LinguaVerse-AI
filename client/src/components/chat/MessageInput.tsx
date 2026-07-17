@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { FiSend } from "react-icons/fi";
 
-import LanguageSelector from "./LanguageSelector";
-import GrammarSuggestion from "./GrammarSuggestion";
-import ToneSelector from "./ToneSelector";
+import useSocket from "../../hooks/useSocket";
 
-interface MessageInputProps {
+interface Props {
+  sending: boolean;
+
   onSend: (
     message: string,
     sourceLang: string,
@@ -12,31 +13,44 @@ interface MessageInputProps {
     grammar: boolean,
     tone: "normal" | "formal" | "casual"
   ) => void;
-
-  sending?: boolean;
 }
 
 export default function MessageInput({
+  sending,
   onSend,
-  sending = false,
-}: MessageInputProps) {
-  const [message, setMessage] = useState("");
+}: Props) {
+  const socket = useSocket();
 
-  // Language codes
+  const username =
+    localStorage.getItem("name") || "User";
+
+  const [message, setMessage] =
+    useState("");
+
   const [sourceLang, setSourceLang] =
-    useState("auto");
+    useState("en");
 
   const [targetLang, setTargetLang] =
     useState("hi");
 
   const [grammar, setGrammar] =
-    useState(true);
+    useState(false);
 
   const [tone, setTone] = useState<
     "normal" | "formal" | "casual"
   >("normal");
 
-  const handleSend = () => {
+  const handleTyping = (
+    value: string
+  ) => {
+    setMessage(value);
+
+    socket?.emit("typing", {
+      username,
+    });
+  };
+
+  const handleSubmit = () => {
     if (!message.trim()) return;
 
     onSend(
@@ -51,89 +65,84 @@ export default function MessageInput({
   };
 
   return (
-    <div className="space-y-4 border-t bg-white p-4">
+    <div className="space-y-3 border-t bg-white p-4">
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex gap-3">
 
-        <LanguageSelector
+        <select
           value={sourceLang}
-          onChange={setSourceLang}
-        />
+          onChange={(e) =>
+            setSourceLang(e.target.value)
+          }
+          className="rounded border p-2"
+        >
+          <option value="en">English</option>
+          <option value="hi">Hindi</option>
+          <option value="fr">French</option>
+          <option value="es">Spanish</option>
+        </select>
 
-        <LanguageSelector
+        <select
           value={targetLang}
-          onChange={setTargetLang}
-        />
+          onChange={(e) =>
+            setTargetLang(e.target.value)
+          }
+          className="rounded border p-2"
+        >
+          <option value="hi">Hindi</option>
+          <option value="en">English</option>
+          <option value="fr">French</option>
+          <option value="es">Spanish</option>
+        </select>
 
-      </div>
-
-      <div className="flex items-center justify-between rounded-lg bg-gray-100 p-4">
-
-        <GrammarSuggestion
-          enabled={grammar}
-          onToggle={setGrammar}
-        />
-
-        <ToneSelector
+        <select
           value={tone}
-          onChange={setTone}
-        />
+          onChange={(e) =>
+            setTone(
+              e.target.value as
+                | "normal"
+                | "formal"
+                | "casual"
+            )
+          }
+          className="rounded border p-2"
+        >
+          <option value="normal">Normal</option>
+          <option value="formal">Formal</option>
+          <option value="casual">Casual</option>
+        </select>
 
       </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={grammar}
+          onChange={(e) =>
+            setGrammar(e.target.checked)
+          }
+        />
+
+        Grammar Correction
+      </label>
 
       <div className="flex gap-3">
 
         <input
-          type="text"
           value={message}
-          disabled={sending}
-          placeholder="Type your message..."
           onChange={(e) =>
-            setMessage(e.target.value)
+            handleTyping(e.target.value)
           }
-          onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              !sending
-            ) {
-              handleSend();
-            }
-          }}
-          className="
-            flex-1
-            rounded-lg
-            border
-            px-4
-            py-3
-            outline-none
-            transition
-            focus:border-blue-500
-            disabled:cursor-not-allowed
-            disabled:bg-gray-100
-          "
+          placeholder="Type your message..."
+          className="flex-1 rounded-lg border p-3"
         />
 
         <button
-          onClick={handleSend}
-          disabled={
-            sending || !message.trim()
-          }
-          className="
-            rounded-lg
-            bg-blue-600
-            px-6
-            py-3
-            font-medium
-            text-white
-            transition
-            hover:bg-blue-700
-            disabled:cursor-not-allowed
-            disabled:bg-gray-400
-          "
+          disabled={sending}
+          onClick={handleSubmit}
+          className="rounded-lg bg-blue-600 px-5 text-white hover:bg-blue-700"
         >
-          {sending
-            ? "Sending..."
-            : "Send"}
+          <FiSend />
         </button>
 
       </div>
