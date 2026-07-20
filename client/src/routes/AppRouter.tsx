@@ -18,6 +18,7 @@ import Explain from "../pages/dashboard/Explain";
 
 import Speech from "../pages/speech/Speech";
 import Chat from "../pages/chat/Chat";
+import SignLanguage from "../pages/sign-language/SignLanguage";
 
 const AppRouter = () => {
   return (
@@ -27,11 +28,20 @@ const AppRouter = () => {
 
       <Route element={<PublicLayout />}>
 
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/register"
+          element={<Register />}
+        />
 
         <Route
           path="/forgot-password"
@@ -83,6 +93,11 @@ const AppRouter = () => {
         <Route
           path="/chat"
           element={<Chat />}
+        />
+
+        <Route
+          path="/sign-language"
+          element={<SignLanguage />}
         />
 
         <Route

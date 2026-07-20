@@ -13,6 +13,7 @@ import EmptyChat from "../../components/chat/EmptyChat";
 import CreateRoomButton from "../../components/chat/CreateRoomButton";
 import CreateRoomModal from "../../components/chat/CreateRoomModal";
 import TypingIndicator from "../../components/chat/TypingIndicator";
+import LanguageSelector from "../../components/chat/LanguageSelector";
 
 import {
   createRoom,
@@ -28,6 +29,9 @@ export default function Chat() {
 
   const currentUserId =
     localStorage.getItem("userId") || "";
+
+  const currentUsername =
+    localStorage.getItem("name") || "User";
 
   const socket = useSocket();
 
@@ -55,9 +59,27 @@ export default function Chat() {
   const [typingUser, setTypingUser] =
     useState("");
 
+  const [onlineUsers, setOnlineUsers] =
+    useState<string[]>([]);
+
+  const [sourceLanguage, setSourceLanguage] =
+    useState("auto");
+
+  const [targetLanguage, setTargetLanguage] =
+    useState("en");
+
   useEffect(() => {
     loadRooms();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.emit("user-online", {
+      userId: currentUserId,
+      username: currentUsername,
+    });
+  }, [socket]);
 
   const loadRooms = async () => {
     try {
@@ -70,8 +92,8 @@ export default function Chat() {
       if (data.length > 0) {
         setSelectedRoom(data[0]);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoadingRooms(false);
     }
@@ -89,8 +111,8 @@ export default function Chat() {
       );
 
       setMessages(data);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoadingMessages(false);
     }
@@ -113,8 +135,8 @@ export default function Chat() {
       setSelectedRoom(room);
 
       setShowModal(false);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -123,10 +145,16 @@ export default function Chat() {
 
     loadMessages(selectedRoom.id);
 
-    socket.emit("join-room", selectedRoom.id);
+    socket.emit(
+      "join-room",
+      selectedRoom.id
+    );
 
     return () => {
-      socket.emit("leave-room", selectedRoom.id);
+      socket.emit(
+        "leave-room",
+        selectedRoom.id
+      );
     };
   }, [selectedRoom, socket]);
 
@@ -142,14 +170,22 @@ export default function Chat() {
       ]);
     };
 
-    const receiveTyping = (data: {
+    const receiveTyping = ({
+      username,
+    }: {
       username: string;
     }) => {
-      setTypingUser(data.username);
+      setTypingUser(username);
 
       setTimeout(() => {
         setTypingUser("");
-      }, 1200);
+      }, 1500);
+    };
+
+    const receiveOnlineUsers = (
+      users: string[]
+    ) => {
+      setOnlineUsers(users);
     };
 
     socket.on(
@@ -158,8 +194,20 @@ export default function Chat() {
     );
 
     socket.on(
-      "user-typing",
+      "typing",
       receiveTyping
+    );
+
+    socket.on(
+      "online-users",
+      receiveOnlineUsers
+    );
+
+    socket.on(
+      "stop-typing",
+      () => {
+        setTypingUser("");
+      }
     );
 
     return () => {
@@ -169,18 +217,28 @@ export default function Chat() {
       );
 
       socket.off(
-        "user-typing",
+        "typing",
         receiveTyping
+      );
+
+      socket.off(
+        "stop-typing"
+      );
+
+      socket.off(
+        "online-users",
+        receiveOnlineUsers
       );
     };
   }, [socket]);
 
   const handleSend = async (
     message: string,
-    sourceLang: string,
-    targetLang: string,
     grammar: boolean,
-    tone: "normal" | "formal" | "casual"
+    tone:
+      | "normal"
+      | "formal"
+      | "casual"
   ) => {
     if (!selectedRoom) return;
 
@@ -191,31 +249,30 @@ export default function Chat() {
         {
           roomId: selectedRoom.id,
           message,
-          sourceLang,
-          targetLang,
+          sourceLang: sourceLanguage,
+          targetLang: targetLanguage,
           grammar,
           tone,
         },
         token
       );
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       setSending(false);
     }
   };
-
-  return (
+    return (
     <div className="flex h-full">
+
       <ChatSidebar
         rooms={rooms}
-        selectedRoom={
-          selectedRoom?.id || ""
-        }
+        selectedRoom={selectedRoom?.id || ""}
         onSelectRoom={setSelectedRoom}
       />
 
       <div className="flex flex-1 flex-col">
+
         <ChatHeader
           roomName={
             selectedRoom?.name ??
@@ -223,47 +280,92 @@ export default function Chat() {
           }
         />
 
+        {/* Language Selection */}
+
+        <div className="border-b bg-white p-4">
+
+          <div className="flex flex-wrap items-center justify-between gap-4">
+
+            <LanguageSelector
+              sourceLanguage={sourceLanguage}
+              targetLanguage={targetLanguage}
+              onSourceChange={setSourceLanguage}
+              onTargetChange={setTargetLanguage}
+            />
+
+            <div className="rounded-lg bg-green-50 px-4 py-2 text-sm font-medium text-green-700">
+
+              🟢 {onlineUsers.length} Online
+
+            </div>
+
+          </div>
+
+        </div>
+
         <div className="flex justify-end border-b bg-white p-4">
+
           <CreateRoomButton
             onClick={() =>
               setShowModal(true)
             }
           />
+
         </div>
 
         {loadingRooms ? (
+
           <div className="flex flex-1 items-center justify-center">
+
             Loading rooms...
+
           </div>
+
         ) : !selectedRoom ? (
+
           <EmptyChat />
+
         ) : (
+
           <>
+
             {loadingMessages ? (
+
               <div className="flex flex-1 items-center justify-center">
+
                 Loading messages...
+
               </div>
+
             ) : (
+
               <>
+
                 <ChatWindow
                   messages={messages}
-                  currentUserId={
-                    currentUserId
-                  }
+                  currentUserId={currentUserId}
                 />
 
                 <TypingIndicator
                   username={typingUser}
                 />
+
               </>
+
             )}
 
             <MessageInput
               onSend={handleSend}
               sending={sending}
+              socket={socket}
+              roomId={selectedRoom.id}
+              username={currentUsername}
             />
+
           </>
+
         )}
+
       </div>
 
       <CreateRoomModal
@@ -273,6 +375,7 @@ export default function Chat() {
         }
         onCreate={handleCreateRoom}
       />
+
     </div>
   );
 }
