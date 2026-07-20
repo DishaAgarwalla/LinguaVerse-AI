@@ -15,11 +15,37 @@ export default function useSocket() {
 
     if (!token) return;
 
-    const s = connectSocket(token);
+    const connectedSocket =
+      connectSocket(token);
 
-    setSocket(s);
+    connectedSocket.on("connect", () => {
+      console.log(
+        "🟢 Socket Connected:",
+        connectedSocket.id
+      );
+    });
+
+    connectedSocket.on("disconnect", () => {
+      console.log("🔴 Socket Disconnected");
+    });
+
+    connectedSocket.on(
+      "connect_error",
+      (error) => {
+        console.error(
+          "Socket Error:",
+          error.message
+        );
+      }
+    );
+
+    setSocket(connectedSocket);
 
     return () => {
+      connectedSocket.off("connect");
+      connectedSocket.off("disconnect");
+      connectedSocket.off("connect_error");
+
       disconnectSocket();
     };
   }, []);
