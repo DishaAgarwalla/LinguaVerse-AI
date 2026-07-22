@@ -1,22 +1,71 @@
 import { Server, Socket } from "socket.io";
 
+interface OnlineUser {
+  socketId: string;
+  username: string;
+}
+
+const onlineUsers = new Map<string, OnlineUser>();
+
 export default function registerChatSocket(io: Server) {
   io.on("connection", (socket: Socket) => {
     console.log("🟢 User Connected:", socket.id);
 
-    // Join room
+    /* ============================
+       USER ONLINE
+    ============================ */
+
+    socket.on(
+      "user-online",
+      ({
+        userId,
+        username,
+      }: {
+        userId: string;
+        username: string;
+      }) => {
+        onlineUsers.set(userId, {
+          socketId: socket.id,
+          username,
+        });
+
+        io.emit(
+          "online-users",
+          Array.from(onlineUsers.keys())
+        );
+
+        console.log(`${username} is online`);
+      }
+    );
+
+    /* ============================
+       JOIN ROOM
+    ============================ */
+
     socket.on("join-room", (roomId: string) => {
       socket.join(roomId);
-      console.log(`${socket.id} joined ${roomId}`);
+
+      console.log(
+        `${socket.id} joined room ${roomId}`
+      );
     });
 
-    // Leave room
+    /* ============================
+       LEAVE ROOM
+    ============================ */
+
     socket.on("leave-room", (roomId: string) => {
       socket.leave(roomId);
-      console.log(`${socket.id} left ${roomId}`);
+
+      console.log(
+        `${socket.id} left room ${roomId}`
+      );
     });
 
-    // Typing Indicator
+    /* ============================
+       TYPING INDICATOR
+    ============================ */
+
     socket.on(
       "typing",
       ({
@@ -26,15 +75,25 @@ export default function registerChatSocket(io: Server) {
         roomId: string;
         username: string;
       }) => {
-        socket.to(roomId).emit("typing", username);
+        socket.to(roomId).emit("typing", {
+          username,
+        });
       }
     );
 
-    socket.on("stop-typing", (roomId: string) => {
-      socket.to(roomId).emit("stop-typing");
-    });
+    socket.on(
+      "stop-typing",
+      (roomId: string) => {
+        socket
+          .to(roomId)
+          .emit("stop-typing");
+      }
+    );
 
-    // Live Message Broadcast
+    /* ============================
+       LIVE MESSAGE
+    ============================ */
+
     socket.on("send-message", (message) => {
       io.to(message.roomId).emit(
         "receive-message",
@@ -42,8 +101,35 @@ export default function registerChatSocket(io: Server) {
       );
     });
 
+    /* ============================
+       DISCONNECT
+    ============================ */
+
     socket.on("disconnect", () => {
-      console.log("🔴 User Disconnected:", socket.id);
+      for (const [
+        userId,
+        user,
+      ] of onlineUsers.entries()) {
+        if (user.socketId === socket.id) {
+          console.log(
+            `${user.username} disconnected`
+          );
+
+          onlineUsers.delete(userId);
+
+          break;
+        }
+      }
+
+      io.emit(
+        "online-users",
+        Array.from(onlineUsers.keys())
+      );
+
+      console.log(
+        "🔴 User Disconnected:",
+        socket.id
+      );
     });
   });
 }

@@ -11,6 +11,10 @@ import {
 
 const router = Router();
 
+/* =============================
+   Chat Rooms
+============================= */
+
 router.post(
   "/room",
   authMiddleware,
@@ -22,6 +26,10 @@ router.get(
   authMiddleware,
   fetchRooms
 );
+
+/* =============================
+   Messages
+============================= */
 
 router.get(
   "/messages/:roomId",

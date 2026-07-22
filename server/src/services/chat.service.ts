@@ -1,8 +1,13 @@
 import prisma from "../config/prisma";
+
 import { translateText } from "./translate.service";
 import { detectLanguage } from "./detectLanguage.service";
 import { correctGrammar } from "./grammar.service";
-import { adjustTone, ToneType } from "./tone.service";
+import {
+  adjustTone,
+  ToneType,
+} from "./tone.service";
+
 import { getIO } from "../socket/socket";
 
 interface SendMessageProps {
@@ -15,7 +20,9 @@ interface SendMessageProps {
   tone?: ToneType;
 }
 
-export const createRoom = async (name: string) => {
+export const createRoom = async (
+  name: string
+) => {
   return prisma.chatRoom.create({
     data: { name },
   });
@@ -29,9 +36,14 @@ export const getRooms = async () => {
   });
 };
 
-export const getMessages = async (roomId: string) => {
+export const getMessages = async (
+  roomId: string
+) => {
   return prisma.chatMessage.findMany({
-    where: { roomId },
+    where: {
+      roomId,
+    },
+
     include: {
       sender: {
         select: {
@@ -41,6 +53,7 @@ export const getMessages = async (roomId: string) => {
         },
       },
     },
+
     orderBy: {
       createdAt: "asc",
     },
@@ -57,87 +70,86 @@ export const sendMessage = async ({
   tone = "normal",
 }: SendMessageProps) => {
   try {
-    console.log("========== CHAT ==========");
-    console.log("Room:", roomId);
-    console.log("Sender:", senderId);
-    console.log("Original Message:", message);
-
     let processedMessage = message;
 
-    // ==========================
-    // Grammar
-    // ==========================
+    /* ==========================
+       Grammar
+    ========================== */
+
     if (grammar) {
-      processedMessage = await correctGrammar(processedMessage);
-      console.log("Grammar:", processedMessage);
+      processedMessage =
+        await correctGrammar(
+          processedMessage
+        );
     }
 
-    // ==========================
-    // Tone
-    // ==========================
-    processedMessage = await adjustTone(
-      processedMessage,
-      tone
-    );
+    /* ==========================
+       Tone
+    ========================== */
 
-    console.log("Tone:", processedMessage);
+    processedMessage =
+      await adjustTone(
+        processedMessage,
+        tone
+      );
 
-    // ==========================
-    // Auto Language Detection
-    // ==========================
-    let detectedSourceLang = sourceLang;
+    /* ==========================
+       Detect Language
+    ========================== */
+
+    let detectedLanguage =
+      sourceLang;
 
     if (
       !sourceLang ||
-      sourceLang.trim() === "" ||
-      sourceLang.toLowerCase() === "auto"
+      sourceLang === "" ||
+      sourceLang === "auto"
     ) {
-      console.log("Running Language Detection...");
-
-      detectedSourceLang = (
-        await detectLanguage(processedMessage)
-      )
-        .trim()
-        .toLowerCase();
-
-      console.log(
-        "Detected Language:",
-        detectedSourceLang
-      );
+      detectedLanguage =
+        await detectLanguage(
+          processedMessage
+        );
     }
 
-    // Safety fallback
     if (
-      !detectedSourceLang ||
-      detectedSourceLang === "auto"
+      !detectedLanguage ||
+      detectedLanguage === "auto"
     ) {
-      detectedSourceLang = "en";
+      detectedLanguage = "en";
     }
 
-    console.log("Final Source:", detectedSourceLang);
-    console.log("Target:", targetLang);
+    /* ==========================
+       Translate
+    ========================== */
 
-    // ==========================
-    // Translation
-    // ==========================
-    const translatedText = await translateText(
-      processedMessage,
-      detectedSourceLang,
-      targetLang
-    );
+    const translatedText =
+      await translateText(
+        processedMessage,
+        detectedLanguage,
+        targetLang
+      );
 
-    console.log("Translated:", translatedText);
+    /* ==========================
+       Save
+    ========================== */
 
-    const chatMessage =
+    const savedMessage =
       await prisma.chatMessage.create({
         data: {
           roomId,
           senderId,
-          originalText: processedMessage,
+
+          originalText:
+            processedMessage,
+
           translatedText,
-          sourceLang: detectedSourceLang,
+
+          sourceLang:
+            detectedLanguage,
+
           targetLang,
         },
+
         include: {
           sender: {
             select: {
@@ -149,20 +161,24 @@ export const sendMessage = async ({
         },
       });
 
+    /* ==========================
+       Live Socket Broadcast
+    ========================== */
+
     getIO()
       .to(roomId)
-      .emit("receive-message", chatMessage);
+      .emit(
+        "receive-message",
+        savedMessage
+      );
 
-    return chatMessage;
-  } catch (error: any) {
-  console.error("=================================");
-  console.error("❌ CHAT SERVICE ERROR");
-  console.error("=================================");
-  console.error(error);
-  console.error("Message:", error?.message);
-  console.error("Code:", error?.code);
-  console.error("Meta:", error?.meta);
-  console.error("=================================");
+    return savedMessage;
+  } catch (error) {
+    console.error(
+      "Chat Service Error:",
+      error
+    );
 
-  throw error;
-}}
+    throw error;
+  }
+};
