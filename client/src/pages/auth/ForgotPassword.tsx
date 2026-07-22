@@ -1,14 +1,13 @@
 import AuthLayout from "../../components/auth/AuthLayout";
+import ForgotPasswordForm from "../../components/auth/ForgotPasswordForm";
 
 const ForgotPassword = () => {
   return (
     <AuthLayout
-      title="Forgot Password"
-      subtitle="We'll help you reset your password"
+      title="Reset Password"
+      subtitle="We'll help you recover your account"
     >
-      <h2 className="text-center text-xl font-semibold">
-        Forgot Password Form Coming Soon...
-      </h2>
+      <ForgotPasswordForm />
     </AuthLayout>
   );
 };

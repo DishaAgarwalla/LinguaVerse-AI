@@ -5,7 +5,7 @@ const Login = () => {
   return (
     <AuthLayout
       title="Welcome Back"
-      subtitle="Login to your account"
+      subtitle="Login to your account to continue"
     >
       <LoginForm />
     </AuthLayout>

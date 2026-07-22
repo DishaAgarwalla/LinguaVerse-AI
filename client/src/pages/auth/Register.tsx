@@ -5,7 +5,7 @@ const Register = () => {
   return (
     <AuthLayout
       title="Create Account"
-      subtitle="Join LinguaVerse AI today"
+      subtitle="Join LinguaVerse AI and break language barriers"
     >
       <RegisterForm />
     </AuthLayout>
