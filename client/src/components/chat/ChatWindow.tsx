@@ -6,16 +6,10 @@ interface Props {
   currentUserId: string;
 }
 
-export default function ChatWindow({
-  messages,
-  currentUserId,
-}: Props) {
+export default function ChatWindow({ messages, currentUserId }: Props) {
   return (
     <div className="flex flex-1 flex-col">
-      <ChatMessages
-        messages={messages}
-        currentUserId={currentUserId}
-      />
+      <ChatMessages messages={messages} currentUserId={currentUserId} />
     </div>
   );
 }
