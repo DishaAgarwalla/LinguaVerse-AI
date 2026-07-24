@@ -8,7 +8,7 @@ import CTA from "../../components/home/CTA";
 
 const Home = () => {
   return (
-    <>
+    <div className="animate-fadeIn">
       <Hero />
       <Features />
       <HowItWorks />
@@ -16,7 +16,7 @@ const Home = () => {
       <Testimonials />
       <FAQ />
       <CTA />
-    </>
+    </div>
   );
 };
 
