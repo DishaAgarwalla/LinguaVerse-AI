@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { FaCopy, FaVolumeUp, FaCheck, FaDownload } from "react-icons/fa";
+
 interface Props {
   translated: string;
   targetLang: string;
@@ -22,44 +25,78 @@ const languageCodes: Record<string, string> = {
   Punjabi: "pa-IN",
 };
 
-const OCRActions = ({
-  translated,
-  targetLang,
-}: Props) => {
+const OCRActions = ({ translated, targetLang }: Props) => {
+  const [copied, setCopied] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const copy = async () => {
     await navigator.clipboard.writeText(translated);
-
-    alert("Copied!");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const speak = () => {
-    const utterance =
-      new SpeechSynthesisUtterance(translated);
-
-    utterance.lang =
-      languageCodes[targetLang] || "en-US";
-
+    setIsPlaying(true);
+    const utterance = new SpeechSynthesisUtterance(translated);
+    utterance.lang = languageCodes[targetLang] || "en-US";
+    utterance.rate = 0.9;
     speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
+    
+    // Reset playing state after speech ends (approximate)
+    const duration = Math.max(translated.length * 100, 1000);
+    setTimeout(() => setIsPlaying(false), duration);
+  };
+
+  const download = () => {
+    const blob = new Blob([translated], {
+      type: "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ocr_translation_${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="mt-8 flex gap-4">
-
+    <div className="mt-6 flex flex-wrap gap-3 pt-4 border-t border-gray-200">
       <button
         onClick={copy}
-        className="rounded-lg bg-blue-600 px-5 py-2 text-white"
+        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-5 py-2.5 font-medium text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
       >
-        Copy
+        {copied ? (
+          <>
+            <FaCheck className="w-4 h-4" />
+            Copied!
+          </>
+        ) : (
+          <>
+            <FaCopy className="w-4 h-4" />
+            Copy
+          </>
+        )}
       </button>
 
       <button
         onClick={speak}
-        className="rounded-lg bg-green-600 px-5 py-2 text-white"
+        disabled={isPlaying}
+        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-5 py-2.5 font-medium text-white shadow-lg shadow-green-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Speak
+        <FaVolumeUp className={`w-4 h-4 ${isPlaying ? "animate-pulse" : ""}`} />
+        {isPlaying ? "Playing..." : "Listen"}
       </button>
 
+      <button
+        onClick={download}
+        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 px-5 py-2.5 font-medium text-white shadow-lg shadow-purple-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105"
+      >
+        <FaDownload className="w-4 h-4" />
+        Download
+      </button>
     </div>
   );
 };
