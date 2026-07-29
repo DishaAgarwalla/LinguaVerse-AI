@@ -20,38 +20,22 @@ import Speech from "../pages/speech/Speech";
 import Chat from "../pages/chat/Chat";
 import SignLanguage from "../pages/sign-language/SignLanguage";
 
+// Import from the new profile location
+import Profile from "../pages/profile/Profile";
+import EditProfile from "../pages/profile/EditProfile";
+
 const AppRouter = () => {
   return (
     <Routes>
-
       {/* ================= Public Routes ================= */}
-
       <Route element={<PublicLayout />}>
-
-        <Route
-          path="/"
-          element={<Home />}
-        />
-
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-
-        <Route
-          path="/register"
-          element={<Register />}
-        />
-
-        <Route
-          path="/forgot-password"
-          element={<ForgotPassword />}
-        />
-
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Route>
 
       {/* ================= Protected Routes ================= */}
-
       <Route
         element={
           <ProtectedRoute>
@@ -59,54 +43,20 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       >
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/translate" element={<Translate />} />
+        <Route path="/ocr" element={<OCR />} />
+        <Route path="/speech" element={<Speech />} />
+        <Route path="/documents" element={<Documents />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/sign-language" element={<SignLanguage />} />
+        <Route path="/explain" element={<Explain />} />
 
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
-
-        <Route
-          path="/translate"
-          element={<Translate />}
-        />
-
-        <Route
-          path="/ocr"
-          element={<OCR />}
-        />
-
-        <Route
-          path="/speech"
-          element={<Speech />}
-        />
-
-        <Route
-          path="/documents"
-          element={<Documents />}
-        />
-
-        <Route
-          path="/history"
-          element={<History />}
-        />
-
-        <Route
-          path="/chat"
-          element={<Chat />}
-        />
-
-        <Route
-          path="/sign-language"
-          element={<SignLanguage />}
-        />
-
-        <Route
-          path="/explain"
-          element={<Explain />}
-        />
-
+        {/* ================= Profile Routes ================= */}
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/edit" element={<EditProfile />} />
       </Route>
-
     </Routes>
   );
 };
