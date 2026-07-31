@@ -20,9 +20,11 @@ import Speech from "../pages/speech/Speech";
 import Chat from "../pages/chat/Chat";
 import SignLanguage from "../pages/sign-language/SignLanguage";
 
-// Import from the new profile location
 import Profile from "../pages/profile/Profile";
 import EditProfile from "../pages/profile/EditProfile";
+
+// ✅ ADD THIS
+import Settings from "../pages/settings/Settings";
 
 const AppRouter = () => {
   return (
@@ -43,7 +45,10 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       >
+        {/* Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Translation */}
         <Route path="/translate" element={<Translate />} />
         <Route path="/ocr" element={<OCR />} />
         <Route path="/speech" element={<Speech />} />
@@ -53,9 +58,12 @@ const AppRouter = () => {
         <Route path="/sign-language" element={<SignLanguage />} />
         <Route path="/explain" element={<Explain />} />
 
-        {/* ================= Profile Routes ================= */}
+        {/* Profile */}
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/edit" element={<EditProfile />} />
+
+        {/* ✅ Settings */}
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );
