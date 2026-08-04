@@ -7,6 +7,9 @@ import http from "http";
 import { initializeSocket } from "./socket/socket";
 
 import authRoutes from "./routes/auth.routes";
+import profileRoutes from "./routes/profile.routes";
+import settingsRoutes from "./routes/settings.routes"; // ✅ ADD THIS
+
 import translateRoutes from "./routes/translate.routes";
 import ocrRoutes from "./routes/ocr.routes";
 import documentRoutes from "./routes/document.routes";
@@ -15,18 +18,16 @@ import chatRoutes from "./routes/chat.routes";
 import historyRoutes from "./routes/history.routes";
 import explainRoutes from "./routes/explain.routes";
 import signLanguageRoutes from "./routes/signLanguage.routes";
-import profileRoutes from "./routes/profile.routes";
 
 dotenv.config();
 
 const app = express();
-
 const server = http.createServer(app);
 
 initializeSocket(server);
 
 /* ==========================
-   Body Parser Limits
+   Body Parser
 ========================== */
 
 app.use(
@@ -74,8 +75,7 @@ app.use(
 app.get("/", (_req, res) => {
   res.json({
     success: true,
-    message:
-      "LinguaVerse AI Backend Running",
+    message: "LinguaVerse AI Backend Running",
   });
 });
 
@@ -84,48 +84,32 @@ app.get("/", (_req, res) => {
 ========================== */
 
 app.use("/api/auth", authRoutes);
+
 app.use("/api/profile", profileRoutes);
 
-app.use(
-  "/api/translate",
-  translateRoutes
-);
+app.use("/api/settings", settingsRoutes); // ✅ ADD THIS
+
+app.use("/api/translate", translateRoutes);
 
 app.use("/api/ocr", ocrRoutes);
 
-app.use(
-  "/api/documents",
-  documentRoutes
-);
+app.use("/api/documents", documentRoutes);
 
-app.use(
-  "/api/speech",
-  speechRoutes
-);
+app.use("/api/speech", speechRoutes);
 
 app.use("/api/chat", chatRoutes);
 
-app.use(
-  "/api/history",
-  historyRoutes
-);
+app.use("/api/history", historyRoutes);
 
-app.use(
-  "/api/explain",
-  explainRoutes
-);
+app.use("/api/explain", explainRoutes);
 
-app.use(
-  "/api/sign-language",
-  signLanguageRoutes
-);
+app.use("/api/sign-language", signLanguageRoutes);
 
 /* ==========================
    Server
 ========================== */
 
-const PORT =
-  Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 server.listen(PORT, () => {
   console.log(`
@@ -133,6 +117,7 @@ server.listen(PORT, () => {
 🚀 LinguaVerse AI Backend Started
 🌐 Server Running: http://localhost:${PORT}
 🤟 Sign Language API Enabled
+⚙️ Settings API Enabled
 =========================================
 `);
 });
