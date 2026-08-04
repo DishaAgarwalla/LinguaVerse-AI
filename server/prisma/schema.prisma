@@ -21,6 +21,17 @@ model User {
   role       UserRole @default(USER)
   isVerified Boolean  @default(false)
 
+  // ===========================
+  // SETTINGS
+  // ===========================
+
+  language            String  @default("English")
+  theme               String  @default("light")
+  emailNotifications  Boolean @default(true)
+  pushNotifications   Boolean @default(true)
+  twoFactorEnabled    Boolean @default(false)
+  profileVisibility   String  @default("public")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
