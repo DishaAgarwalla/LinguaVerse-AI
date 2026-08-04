@@ -9,6 +9,8 @@ import ocrRoutes from "./routes/ocr.routes";
 import documentRoutes from "./routes/document.routes";
 import speechRoutes from "./routes/speech.routes";
 import chatRoutes from "./routes/chat.routes";
+import settingsRoutes from "./routes/settings.routes";
+
 const app = express();
 
 app.use(
@@ -33,9 +35,13 @@ app.use("/api/translate", translateRoutes);
 app.use("/api/ocr", ocrRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/speech", speechRoutes);
-
 app.use("/api/history", historyRoutes);
-
 app.use("/api/chat", chatRoutes);
+
+/* ===========================
+   SETTINGS
+=========================== */
+
+app.use("/api/settings", settingsRoutes);
 
 export default app;
