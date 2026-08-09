@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { FaCopy, FaVolumeUp, FaCheck, FaDownload } from "react-icons/fa";
+import {
+  FaCopy,
+  FaVolumeUp,
+  FaCheck,
+  FaDownload,
+} from "react-icons/fa";
 
 interface Props {
   translated: string;
@@ -25,7 +30,10 @@ const languageCodes: Record<string, string> = {
   Punjabi: "pa-IN",
 };
 
-const ActionButtons = ({ translated, targetLang }: Props) => {
+const ActionButtons = ({
+  translated,
+  targetLang,
+}: Props) => {
   const [copied, setCopied] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -33,7 +41,10 @@ const ActionButtons = ({ translated, targetLang }: Props) => {
     try {
       await navigator.clipboard.writeText(translated);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     } catch (error) {
       console.error(error);
       alert("Failed to copy.");
@@ -44,73 +55,176 @@ const ActionButtons = ({ translated, targetLang }: Props) => {
     if (!translated) return;
 
     setIsPlaying(true);
-    const utterance = new SpeechSynthesisUtterance(translated);
-    utterance.lang = languageCodes[targetLang] || "en-US";
+
+    const utterance = new SpeechSynthesisUtterance(
+      translated
+    );
+
+    utterance.lang =
+      languageCodes[targetLang] || "en-US";
+
     utterance.rate = 0.9;
 
-    const voices = speechSynthesis.getVoices();
+    const voices =
+      speechSynthesis.getVoices();
+
     const voice = voices.find((v) =>
-      v.lang.startsWith(utterance.lang.split("-")[0])
+      v.lang.startsWith(
+        utterance.lang.split("-")[0]
+      )
     );
+
     if (voice) {
       utterance.voice = voice;
     }
 
+    utterance.onend = () => {
+      setIsPlaying(false);
+    };
+
     speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
-    
-    setTimeout(() => setIsPlaying(false), Math.max(translated.length * 100, 1000));
   };
 
   const download = () => {
     const blob = new Blob([translated], {
       type: "text/plain;charset=utf-8",
     });
+
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
+
     a.href = url;
     a.download = `translation_${Date.now()}.txt`;
+
     document.body.appendChild(a);
     a.click();
+
     document.body.removeChild(a);
+
     URL.revokeObjectURL(url);
   };
 
   return (
     <div className="flex flex-wrap gap-3">
+
+      {/* Copy */}
+
       <button
         onClick={copyText}
-        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
+        className="
+          inline-flex
+          items-center
+          gap-2
+          rounded-xl
+          bg-gradient-to-r
+          from-blue-500
+          to-indigo-600
+          px-4
+          py-2.5
+          text-sm
+          font-medium
+          text-white
+          shadow-lg
+          shadow-blue-500/20
+          transition-all
+          duration-300
+
+          hover:scale-105
+          hover:shadow-xl
+
+          dark:shadow-blue-900/30
+        "
       >
         {copied ? (
           <>
-            <FaCheck className="w-4 h-4" />
+            <FaCheck className="h-4 w-4" />
             Copied!
           </>
         ) : (
           <>
-            <FaCopy className="w-4 h-4" />
+            <FaCopy className="h-4 w-4" />
             Copy
           </>
         )}
       </button>
 
+      {/* Listen */}
+
       <button
         onClick={speak}
         disabled={isPlaying}
-        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-green-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="
+          inline-flex
+          items-center
+          gap-2
+          rounded-xl
+          bg-gradient-to-r
+          from-green-500
+          to-emerald-600
+          px-4
+          py-2.5
+          text-sm
+          font-medium
+          text-white
+          shadow-lg
+          shadow-green-500/20
+          transition-all
+          duration-300
+
+          hover:scale-105
+          hover:shadow-xl
+
+          disabled:cursor-not-allowed
+          disabled:opacity-60
+
+          dark:shadow-green-900/30
+        "
       >
-        <FaVolumeUp className={`w-4 h-4 ${isPlaying ? "animate-pulse" : ""}`} />
-        {isPlaying ? "Playing..." : "Listen"}
+        <FaVolumeUp
+          className={`h-4 w-4 ${
+            isPlaying ? "animate-pulse" : ""
+          }`}
+        />
+
+        {isPlaying
+          ? "Playing..."
+          : "Listen"}
       </button>
+
+      {/* Download */}
 
       <button
         onClick={download}
-        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-purple-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105"
+        className="
+          inline-flex
+          items-center
+          gap-2
+          rounded-xl
+          bg-gradient-to-r
+          from-purple-500
+          to-pink-600
+          px-4
+          py-2.5
+          text-sm
+          font-medium
+          text-white
+          shadow-lg
+          shadow-purple-500/20
+          transition-all
+          duration-300
+
+          hover:scale-105
+          hover:shadow-xl
+
+          dark:shadow-purple-900/30
+        "
       >
-        <FaDownload className="w-4 h-4" />
+        <FaDownload className="h-4 w-4" />
         Download
       </button>
+
     </div>
   );
 };
