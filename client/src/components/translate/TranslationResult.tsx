@@ -5,24 +5,73 @@ interface Props {
   loading?: boolean;
 }
 
-const TranslationResult = ({ translated, loading = false }: Props) => {
+const TranslationResult = ({
+  translated,
+  loading = false,
+}: Props) => {
   if (loading) {
     return (
-      <div className="h-56 rounded-xl border-2 border-dashed border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50/30 p-4 flex flex-col items-center justify-center">
-        <FaSpinner className="w-8 h-8 text-blue-500 animate-spin mb-3" />
-        <p className="text-sm text-blue-600 font-medium">Translating...</p>
+      <div
+        className="
+          flex
+          h-56
+          flex-col
+          items-center
+          justify-center
+          rounded-2xl
+          border-2
+          border-dashed
+          border-blue-200
+          bg-gradient-to-br
+          from-blue-50
+          to-indigo-50/40
+
+          dark:border-blue-700
+          dark:from-slate-900
+          dark:to-slate-800
+        "
+      >
+        <FaSpinner className="mb-4 h-8 w-8 animate-spin text-blue-500" />
+
+        <p className="font-medium text-blue-600 dark:text-blue-300">
+          Translating...
+        </p>
+
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+          AI is generating the best translation.
+        </p>
       </div>
     );
   }
 
   if (!translated) {
     return (
-      <div className="h-56 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-4 flex flex-col items-center justify-center">
-        <div className="text-4xl mb-3 opacity-30">🌐</div>
-        <p className="text-sm text-gray-400 text-center">
+      <div
+        className="
+          flex
+          h-56
+          flex-col
+          items-center
+          justify-center
+          rounded-2xl
+          border-2
+          border-dashed
+          border-gray-200
+          bg-gray-50
+
+          dark:border-slate-700
+          dark:bg-slate-900
+        "
+      >
+        <div className="mb-3 text-5xl opacity-40">
+          🌍
+        </div>
+
+        <p className="font-medium text-gray-500 dark:text-slate-300">
           Translation will appear here
         </p>
-        <p className="text-xs text-gray-300 mt-1">
+
+        <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">
           Enter text and click Translate
         </p>
       </div>
@@ -30,11 +79,37 @@ const TranslationResult = ({ translated, loading = false }: Props) => {
   }
 
   return (
-    <div className="h-56 rounded-xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50/30 p-4 overflow-y-auto relative">
-      <div className="absolute top-3 right-3">
-        <FaCheckCircle className="w-4 h-4 text-green-500" />
+    <div
+      className="
+        relative
+        h-56
+        overflow-y-auto
+        rounded-2xl
+        border
+        border-green-200
+        bg-gradient-to-br
+        from-green-50
+        to-emerald-50/40
+        p-5
+
+        dark:border-green-700
+        dark:from-slate-900
+        dark:to-slate-800
+      "
+    >
+      <div className="absolute right-4 top-4">
+        <FaCheckCircle className="text-green-500" />
       </div>
-      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+
+      <p
+        className="
+          whitespace-pre-wrap
+          leading-8
+          text-gray-800
+
+          dark:text-slate-100
+        "
+      >
         {translated}
       </p>
     </div>
