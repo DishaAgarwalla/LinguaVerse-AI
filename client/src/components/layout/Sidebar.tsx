@@ -73,14 +73,21 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`relative flex flex-col bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ${
+      className={`relative flex flex-col
+      bg-[var(--surface)]
+      border-r
+      border-[var(--border)]
+      shadow-lg
+      transition-all
+      duration-300
+      ${
         isCollapsed ? "w-20" : "w-64"
       } min-h-screen`}
     >
       {/* Logo */}
 
       <div
-        className={`flex items-center h-20 border-b px-5 ${
+        className={`flex items-center h-20 border-b border-[var(--border)] px-5 ${
           isCollapsed
             ? "justify-center"
             : "justify-between"
@@ -92,7 +99,7 @@ const Sidebar = () => {
               LinguaVerse
             </h1>
 
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-[var(--text-secondary)]">
               AI Platform
             </p>
           </div>
@@ -119,11 +126,9 @@ const Sidebar = () => {
               } rounded-xl px-3 py-3 transition-all duration-300 ${
                 isActive
                   ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-blue-600"
+                  : "text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-blue-600"
               }`}
             >
-              {/* Active Indicator */}
-
               {isActive && (
                 <div className="absolute left-0 h-8 w-1 rounded-r-full bg-white" />
               )}
@@ -132,7 +137,7 @@ const Sidebar = () => {
                 className={`h-5 w-5 ${
                   isActive
                     ? "text-white"
-                    : "text-gray-500 group-hover:text-blue-600"
+                    : "text-[var(--text-secondary)] group-hover:text-blue-600"
                 }`}
               />
 
@@ -143,7 +148,7 @@ const Sidebar = () => {
               )}
 
               {isCollapsed && (
-                <div className="absolute left-full ml-2 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100">
+                <div className="absolute left-full ml-2 whitespace-nowrap rounded-lg bg-[var(--surface-2)] border border-[var(--border)] px-3 py-1 text-xs text-[var(--text)] opacity-0 transition group-hover:opacity-100 shadow-lg">
                   {item.label}
                 </div>
               )}
@@ -158,7 +163,7 @@ const Sidebar = () => {
         onClick={() =>
           setIsCollapsed(!isCollapsed)
         }
-        className="absolute -right-3 top-20 rounded-full border bg-white p-2 shadow-md transition hover:border-blue-500"
+        className="absolute -right-3 top-20 rounded-full border border-[var(--border)] bg-[var(--surface)] p-2 shadow-md transition hover:border-blue-500"
       >
         {isCollapsed ? (
           <FiChevronRight />
@@ -169,20 +174,20 @@ const Sidebar = () => {
 
       {/* Bottom */}
 
-      <div className="border-t p-4">
+      <div className="border-t border-[var(--border)] p-4">
         {!isCollapsed ? (
-          <div className="rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 p-3">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-bold">
                 AI
               </div>
 
               <div className="flex-1">
-                <p className="font-semibold text-gray-700">
+                <p className="font-semibold text-[var(--text)]">
                   LinguaVerse AI
                 </p>
 
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[var(--text-secondary)]">
                   Your Translation Assistant
                 </p>
               </div>
