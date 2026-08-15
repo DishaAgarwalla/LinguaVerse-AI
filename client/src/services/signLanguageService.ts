@@ -5,12 +5,12 @@ import type {
 } from "../types/signLanguage";
 
 export const detectSign = async (
-  image: string
+  frames: string[]
 ): Promise<DetectionResponse> => {
   const res = await api.post(
     "/sign-language/detect",
     {
-      image,
+      frames,
     }
   );
 
