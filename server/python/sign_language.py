@@ -1,44 +1,882 @@
-import json
 import sys
+import json
+import base64
+import os
 
-"""
-Temporary Sign Language AI
+import cv2
+import joblib
+import mediapipe as mp
+import numpy as np
 
-Later this file will use:
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
-- OpenCV
-- MediaPipe
-- TensorFlow / PyTorch
 
-to recognize real hand gestures.
-"""
+# ============================================================
+# CONFIGURATION
+# ============================================================
 
-result = {
-    "success": True,
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
-    "recognition": {
-        "label": "HELLO",
-        "confidence": 98
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "sign_model.joblib"
+)
+
+HAND_MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "hand_landmarker.task"
+)
+
+SEQUENCE_LENGTH = 30
+
+LANDMARKS_PER_FRAME = 21
+
+VALUES_PER_LANDMARK = 3
+
+EXPECTED_FEATURES = (
+    SEQUENCE_LENGTH
+    *
+    LANDMARKS_PER_FRAME
+    *
+    VALUES_PER_LANDMARK
+)
+
+
+# ============================================================
+# PREDICTION SETTINGS
+#
+# These are the same values used by the working
+# predict_gesture.py.
+# ============================================================
+
+MIN_CONFIDENCE = 0.55
+
+MIN_MARGIN = 0.08
+
+
+# ============================================================
+# TRANSLATIONS
+# ============================================================
+
+TRANSLATIONS = {
+
+    "HELLO": {
+        "English": "Hello",
+        "French": "Bonjour",
+        "Spanish": "Hola",
+        "Hindi": "नमस्ते",
     },
 
-    "translations": [
-        {
-            "language": "English",
-            "text": "Hello"
-        },
-        {
-            "language": "French",
-            "text": "Bonjour"
-        },
-        {
-            "language": "Spanish",
-            "text": "Hola"
-        },
-        {
-            "language": "Hindi",
-            "text": "नमस्ते"
-        }
-    ]
+    "THANK_YOU": {
+        "English": "Thank you",
+        "French": "Merci",
+        "Spanish": "Gracias",
+        "Hindi": "धन्यवाद",
+    },
+
+    "PLEASE": {
+        "English": "Please",
+        "French": "S'il vous plaît",
+        "Spanish": "Por favor",
+        "Hindi": "कृपया",
+    },
 }
 
-print(json.dumps(result, ensure_ascii=False))
+
+# ============================================================
+# ERROR RESPONSE
+# ============================================================
+
+def error_response(message):
+
+    return {
+        "success": False,
+
+        "message": message,
+
+        "recognition": {
+            "label": "Uncertain",
+            "confidence": 0,
+        },
+
+        "translations": [],
+    }
+
+
+# ============================================================
+# LOAD MODEL
+# ============================================================
+
+def load_model():
+
+    if not os.path.exists(MODEL_PATH):
+
+        raise FileNotFoundError(
+            f"Model not found: {MODEL_PATH}"
+        )
+
+    model = joblib.load(
+        MODEL_PATH
+    )
+
+    if not hasattr(
+        model,
+        "n_features_in_"
+    ):
+
+        raise ValueError(
+            "Loaded model does not expose "
+            "n_features_in_."
+        )
+
+    if (
+        model.n_features_in_
+        !=
+        EXPECTED_FEATURES
+    ):
+
+        raise ValueError(
+            "Model feature count mismatch. "
+            f"Expected {EXPECTED_FEATURES}, "
+            f"got {model.n_features_in_}."
+        )
+
+    return model
+
+
+# ============================================================
+# CREATE MEDIAPIPE HAND DETECTOR
+# ============================================================
+
+def create_detector():
+
+    if not os.path.exists(
+        HAND_MODEL_PATH
+    ):
+
+        raise FileNotFoundError(
+            f"Hand model not found: "
+            f"{HAND_MODEL_PATH}"
+        )
+
+    base_options = (
+        python.BaseOptions(
+            model_asset_path=
+            HAND_MODEL_PATH
+        )
+    )
+
+    options = (
+        vision.HandLandmarkerOptions(
+
+            base_options=base_options,
+
+            running_mode=
+            vision.RunningMode.VIDEO,
+
+            num_hands=1,
+
+            min_hand_detection_confidence=0.5,
+
+            min_hand_presence_confidence=0.5,
+
+            min_tracking_confidence=0.5,
+        )
+    )
+
+    detector = (
+        vision.HandLandmarker
+        .create_from_options(
+            options
+        )
+    )
+
+    return detector
+
+
+# ============================================================
+# DECODE BASE64 IMAGE
+# ============================================================
+
+def decode_image(image_data):
+
+    if not isinstance(
+        image_data,
+        str
+    ):
+
+        raise ValueError(
+            "Frame must be a base64 string."
+        )
+
+    # --------------------------------------------------------
+    # Handle data URLs:
+    #
+    # data:image/png;base64,.....
+    #
+    # data:image/jpeg;base64,.....
+    # --------------------------------------------------------
+
+    if "," in image_data:
+
+        image_data = (
+            image_data
+            .split(",", 1)[1]
+        )
+
+    try:
+
+        image_bytes = base64.b64decode(
+            image_data
+        )
+
+    except Exception as error:
+
+        raise ValueError(
+            f"Unable to decode base64 frame: "
+            f"{error}"
+        )
+
+    np_array = np.frombuffer(
+        image_bytes,
+        dtype=np.uint8
+    )
+
+    frame = cv2.imdecode(
+        np_array,
+        cv2.IMREAD_COLOR
+    )
+
+    if frame is None:
+
+        raise ValueError(
+            "Unable to decode image frame."
+        )
+
+    return frame
+
+
+# ============================================================
+# EXTRACT LANDMARKS
+#
+# 21 landmarks × 3 values
+# = 63 values per frame
+# ============================================================
+
+def extract_landmarks(
+    hand_landmarks
+):
+
+    features = []
+
+    for landmark in hand_landmarks:
+
+        features.append(
+            landmark.x
+        )
+
+        features.append(
+            landmark.y
+        )
+
+        features.append(
+            landmark.z
+        )
+
+    return features
+
+
+# ============================================================
+# NORMALIZE SEQUENCE
+#
+# THIS MUST MATCH predict_gesture.py
+# ============================================================
+
+def normalize_sequence(
+    sequence
+):
+
+    sequence = np.array(
+        sequence,
+        dtype=np.float32
+    )
+
+    # --------------------------------------------------------
+    # Shape:
+    #
+    # 30 × 21 × 3
+    # --------------------------------------------------------
+
+    sequence = sequence.reshape(
+        SEQUENCE_LENGTH,
+        LANDMARKS_PER_FRAME,
+        VALUES_PER_LANDMARK
+    )
+
+    # ========================================================
+    # WRIST AS ORIGIN
+    # ========================================================
+
+    wrist = (
+        sequence[:, 0, :]
+        .copy()
+    )
+
+    sequence = (
+        sequence
+        -
+        wrist[:, None, :]
+    )
+
+    # ========================================================
+    # SCALE NORMALIZATION
+    # ========================================================
+
+    distances = np.linalg.norm(
+        sequence,
+        axis=2
+    )
+
+    max_distance = np.max(
+        distances
+    )
+
+    if max_distance > 0:
+
+        sequence = (
+            sequence
+            /
+            max_distance
+        )
+
+    # ========================================================
+    # FLATTEN
+    # ========================================================
+
+    normalized = (
+        sequence.flatten()
+    )
+
+    if (
+        len(normalized)
+        !=
+        EXPECTED_FEATURES
+    ):
+
+        raise ValueError(
+            "Normalized feature count "
+            "does not match expected count. "
+            f"Expected {EXPECTED_FEATURES}, "
+            f"got {len(normalized)}."
+        )
+
+    return normalized
+
+
+# ============================================================
+# DETECT LANDMARK SEQUENCE
+#
+# Input:
+# 30 image frames
+#
+# Output:
+# 30 × 63 landmark values
+# ============================================================
+
+def extract_sequence_features(
+    frames,
+    detector
+):
+
+    if len(frames) != SEQUENCE_LENGTH:
+
+        raise ValueError(
+            f"Exactly {SEQUENCE_LENGTH} "
+            f"frames are required. "
+            f"Received {len(frames)}."
+        )
+
+    sequence_features = []
+
+    timestamp = 0
+
+    # ========================================================
+    # PROCESS EVERY FRAME
+    # ========================================================
+
+    for frame_data in frames:
+
+        frame = decode_image(
+            frame_data
+        )
+
+        # ----------------------------------------------------
+        # Convert BGR → RGB
+        # ----------------------------------------------------
+
+        rgb_frame = cv2.cvtColor(
+            frame,
+            cv2.COLOR_BGR2RGB
+        )
+
+        # ----------------------------------------------------
+        # MediaPipe image
+        # ----------------------------------------------------
+
+        mp_image = mp.Image(
+
+            image_format=
+            mp.ImageFormat.SRGB,
+
+            data=rgb_frame
+        )
+
+        # ----------------------------------------------------
+        # Timestamp
+        #
+        # Must increase for VIDEO mode.
+        # ----------------------------------------------------
+
+        timestamp += 33
+
+        # ----------------------------------------------------
+        # Detect hand
+        # ----------------------------------------------------
+
+        results = (
+            detector.detect_for_video(
+                mp_image,
+                timestamp
+            )
+        )
+
+        # ----------------------------------------------------
+        # Require a hand
+        # ----------------------------------------------------
+
+        if not results.hand_landmarks:
+
+            raise ValueError(
+                "No hand detected in one "
+                "or more frames. Please keep "
+                "your hand visible."
+            )
+
+        # ----------------------------------------------------
+        # Use first detected hand
+        # ----------------------------------------------------
+
+        hand = (
+            results.hand_landmarks[0]
+        )
+
+        # ----------------------------------------------------
+        # Extract 63 values
+        # ----------------------------------------------------
+
+        features = extract_landmarks(
+            hand
+        )
+
+        if len(features) != 63:
+
+            raise ValueError(
+                "Invalid landmark feature count. "
+                f"Expected 63, got {len(features)}."
+            )
+
+        sequence_features.append(
+            features
+        )
+
+    return sequence_features
+
+
+# ============================================================
+# BUILD TRANSLATIONS
+# ============================================================
+
+def build_translations(
+    label
+):
+
+    translation_map = (
+        TRANSLATIONS.get(
+            label,
+            {}
+        )
+    )
+
+    translations = []
+
+    for language, text in (
+        translation_map.items()
+    ):
+
+        translations.append({
+
+            "language":
+            language,
+
+            "text":
+            text,
+        })
+
+    return translations
+
+
+# ============================================================
+# PREDICT GESTURE
+# ============================================================
+
+def predict_gesture(
+    frames
+):
+
+    # --------------------------------------------------------
+    # Load model
+    # --------------------------------------------------------
+
+    model = load_model()
+
+    # --------------------------------------------------------
+    # Create MediaPipe detector
+    # --------------------------------------------------------
+
+    detector = (
+        create_detector()
+    )
+
+    try:
+
+        # ====================================================
+        # EXTRACT LANDMARKS
+        # ====================================================
+
+        sequence = (
+            extract_sequence_features(
+                frames,
+                detector
+            )
+        )
+
+        # ====================================================
+        # NORMALIZE
+        # ====================================================
+
+        normalized_features = (
+            normalize_sequence(
+                sequence
+            )
+        )
+
+        # ====================================================
+        # MODEL INPUT
+        # ====================================================
+
+        model_input = (
+            normalized_features
+            .reshape(
+                1,
+                -1
+            )
+        )
+
+        # ====================================================
+        # PREDICT
+        # ====================================================
+
+        probabilities = (
+            model.predict_proba(
+                model_input
+            )[0]
+        )
+
+        # ====================================================
+        # SORT PROBABILITIES
+        # ====================================================
+
+        sorted_indices = (
+            np.argsort(
+                probabilities
+            )[::-1]
+        )
+
+        best_index = (
+            sorted_indices[0]
+        )
+
+        second_index = (
+            sorted_indices[1]
+        )
+
+        # ====================================================
+        # BEST CLASS
+        # ====================================================
+
+        label = str(
+            model.classes_[
+                best_index
+            ]
+        )
+
+        confidence = float(
+            probabilities[
+                best_index
+            ]
+        )
+
+        # ====================================================
+        # SECOND CLASS
+        # ====================================================
+
+        second_confidence = float(
+            probabilities[
+                second_index
+            ]
+        )
+
+        # ====================================================
+        # MARGIN
+        # ====================================================
+
+        margin = (
+            confidence
+            -
+            second_confidence
+        )
+
+        # ====================================================
+        # QUALITY CHECK
+        # ====================================================
+
+        prediction_is_good = (
+
+            confidence
+            >=
+            MIN_CONFIDENCE
+
+            and
+
+            margin
+            >=
+            MIN_MARGIN
+        )
+
+        # ====================================================
+        # FINAL LABEL
+        # ====================================================
+
+        if prediction_is_good:
+
+            final_label = label
+
+            final_confidence = (
+                confidence * 100
+            )
+
+            translations = (
+                build_translations(
+                    label
+                )
+            )
+
+        else:
+
+            final_label = "Uncertain"
+
+            final_confidence = (
+                confidence * 100
+            )
+
+            translations = []
+
+        # ====================================================
+        # RETURN RESULT
+        # ====================================================
+
+        return {
+
+            "success": True,
+
+            "recognition": {
+
+                "label":
+                final_label,
+
+                "confidence":
+                round(
+                    final_confidence,
+                    1
+                ),
+            },
+
+            "translations":
+            translations,
+
+            "details": {
+
+                "rawLabel":
+                label,
+
+                "rawConfidence":
+                round(
+                    confidence * 100,
+                    1
+                ),
+
+                "margin":
+                round(
+                    margin * 100,
+                    1
+                ),
+
+                "accepted":
+                prediction_is_good,
+            },
+        }
+
+    finally:
+
+        detector.close()
+
+
+# ============================================================
+# MAIN
+# ============================================================
+
+def main():
+
+    try:
+
+        # ====================================================
+        # READ JSON FROM NODE.JS
+        # ====================================================
+
+        input_data = sys.stdin.read()
+
+        if not input_data:
+
+            print(
+                json.dumps(
+                    error_response(
+                        "No input received."
+                    ),
+                    ensure_ascii=False
+                )
+            )
+
+            return
+
+        # ====================================================
+        # PARSE JSON
+        # ====================================================
+
+        try:
+
+            payload = json.loads(
+                input_data
+            )
+
+        except json.JSONDecodeError as error:
+
+            print(
+                json.dumps(
+                    error_response(
+                        f"Invalid JSON input: {error}"
+                    ),
+                    ensure_ascii=False
+                )
+            )
+
+            return
+
+        # ====================================================
+        # GET FRAMES
+        # ====================================================
+
+        frames = payload.get(
+            "frames"
+        )
+
+        if not isinstance(
+            frames,
+            list
+        ):
+
+            print(
+                json.dumps(
+                    error_response(
+                        "frames must be an array."
+                    ),
+                    ensure_ascii=False
+                )
+            )
+
+            return
+
+        # ====================================================
+        # VALIDATE FRAME COUNT
+        # ====================================================
+
+        if len(frames) != SEQUENCE_LENGTH:
+
+            print(
+                json.dumps(
+                    error_response(
+                        f"Exactly "
+                        f"{SEQUENCE_LENGTH} "
+                        f"frames are required. "
+                        f"Received {len(frames)}."
+                    ),
+                    ensure_ascii=False
+                )
+            )
+
+            return
+
+        # ====================================================
+        # PREDICT
+        # ====================================================
+
+        result = predict_gesture(
+            frames
+        )
+
+        # ====================================================
+        # OUTPUT JSON ONLY
+        #
+        # IMPORTANT:
+        # Node.js reads stdout and parses it.
+        # Therefore don't print debugging messages here.
+        # ====================================================
+
+        print(
+            json.dumps(
+                result,
+                ensure_ascii=False
+            )
+        )
+
+    except Exception as error:
+
+        print(
+            json.dumps(
+                error_response(
+                    str(error)
+                ),
+                ensure_ascii=False
+            )
+        )
+
+
+# ============================================================
+# ENTRY POINT
+# ============================================================
+
+if __name__ == "__main__":
+
+    main()
