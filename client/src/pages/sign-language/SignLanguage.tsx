@@ -64,6 +64,13 @@ export default function SignLanguage() {
     useState<RecognitionHistoryItem[]>([]);
 
   // ============================================================
+  // ERROR
+  // ============================================================
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  // ============================================================
   // LEARNING DATA
   // ============================================================
 
@@ -74,14 +81,12 @@ export default function SignLanguage() {
       difficulty: "Easy",
       progress: 80,
     },
-
     {
       gesture: "THANK YOU",
       meaning: "Appreciation",
       difficulty: "Easy",
       progress: 65,
     },
-
     {
       gesture: "PLEASE",
       meaning: "Politeness",
@@ -91,76 +96,70 @@ export default function SignLanguage() {
   ];
 
   // ============================================================
-  // CAPTURE / PREDICT GESTURE
+  // HANDLE CAPTURE
   // ============================================================
 
   const handleCapture = async () => {
+    // ----------------------------------------------------------
+    // Clear previous error
+    // ----------------------------------------------------------
+
+    setErrorMessage("");
+
     // ----------------------------------------------------------
     // Make sure camera is running
     // ----------------------------------------------------------
 
     if (!isRunning) {
-      console.warn(
-        "Camera is not running."
+      setErrorMessage(
+        "Please start the camera first."
       );
 
       return;
     }
-
-    // ----------------------------------------------------------
-    // Prevent multiple simultaneous captures
-    // ----------------------------------------------------------
-
-    if (isCollecting) {
-      return;
-    }
-
-    // ----------------------------------------------------------
-    // Reset current prediction
-    // ----------------------------------------------------------
-
-    setLabel("Collecting...");
-
-    setConfidence(0);
-
-    setTranslations([]);
-
-    setSpeechText("");
-
-    // ----------------------------------------------------------
-    // Collect exactly 30 frames
-    // ----------------------------------------------------------
-
-    const frames =
-      await collectFrames();
-
-    // ----------------------------------------------------------
-    // Check collection
-    // ----------------------------------------------------------
-
-    if (frames.length !== 30) {
-      setLabel(
-        "Unable to collect frames"
-      );
-
-      setConfidence(0);
-
-      return;
-    }
-
-    // ----------------------------------------------------------
-    // Send 30 frames to backend
-    // ----------------------------------------------------------
 
     try {
-      setLabel("Analyzing...");
-      
+      // ========================================================
+      // COLLECT 30 FRAMES
+      // ========================================================
+
+      console.log(
+        "Starting 30-frame collection..."
+      );
+
+      const frames =
+        await collectFrames();
+
+      // ========================================================
+      // VALIDATE
+      // ========================================================
+
+      if (frames.length !== 30) {
+        setErrorMessage(
+          `Unable to collect 30 frames. Received ${frames.length}.`
+        );
+
+        return;
+      }
+
+      console.log(
+        "30 frames collected successfully."
+      );
+
+      // ========================================================
+      // SEND TO BACKEND
+      // ========================================================
+
+      console.log(
+        "Sending 30 frames to backend..."
+      );
+
       const result =
         await detectSign(frames);
 
-      // --------------------------------------------------------
-      // Update prediction
-      // --------------------------------------------------------
+      // ========================================================
+      // UPDATE PREDICTION
+      // ========================================================
 
       setLabel(
         result.recognition.label
@@ -170,17 +169,17 @@ export default function SignLanguage() {
         result.recognition.confidence
       );
 
-      // --------------------------------------------------------
-      // Update translations
-      // --------------------------------------------------------
+      // ========================================================
+      // UPDATE TRANSLATIONS
+      // ========================================================
 
       setTranslations(
         result.translations
       );
 
-      // --------------------------------------------------------
-      // Speech text
-      // --------------------------------------------------------
+      // ========================================================
+      // SPEECH TEXT
+      // ========================================================
 
       const firstTranslation =
         result.translations[0]?.text ??
@@ -190,37 +189,67 @@ export default function SignLanguage() {
         firstTranslation
       );
 
-      // --------------------------------------------------------
-      // Recognition history
-      // --------------------------------------------------------
+      // ========================================================
+      // HISTORY
+      // ========================================================
 
-      if (
-        result.recognition.label !==
-        "Uncertain"
-      ) {
-        setHistory((prev) => [
-          {
-            gesture:
-              result.recognition.label,
+      setHistory((previous) => [
+        {
+          gesture:
+            result.recognition.label,
 
-            translation:
-              firstTranslation,
+          translation:
+            firstTranslation,
 
-            confidence:
-              result.recognition.confidence,
+          confidence:
+            result.recognition.confidence,
 
-            time:
-              new Date().toLocaleTimeString(),
-          },
+          time:
+            new Date().toLocaleTimeString(),
+        },
 
-          ...prev,
-        ]);
-      }
-    } catch (error) {
+        ...previous,
+      ]);
+
+      console.log(
+        "Sign language detection successful:",
+        result
+      );
+
+    } catch (error: any) {
+
+      // ========================================================
+      // ERROR HANDLING
+      // ========================================================
+
       console.error(
         "Sign language detection failed:",
         error
       );
+
+      // --------------------------------------------------------
+      // Extract backend error
+      // --------------------------------------------------------
+
+      const backendMessage =
+        error?.response?.data?.message;
+
+      if (backendMessage) {
+
+        setErrorMessage(
+          backendMessage
+        );
+
+      } else {
+
+        setErrorMessage(
+          "Unable to detect sign language. Please try again."
+        );
+      }
+
+      // --------------------------------------------------------
+      // Reset prediction
+      // --------------------------------------------------------
 
       setLabel(
         "Detection failed"
@@ -235,25 +264,7 @@ export default function SignLanguage() {
   };
 
   // ============================================================
-  // RESET PAGE
-  // ============================================================
-
-  const handleReset = () => {
-    stopCamera();
-
-    setLabel("Waiting...");
-
-    setConfidence(0);
-
-    setTranslations([]);
-
-    setSpeechText("");
-
-    setHistory([]);
-  };
-
-  // ============================================================
-  // PAGE
+  // RENDER
   // ============================================================
 
   return (
@@ -264,15 +275,39 @@ export default function SignLanguage() {
       ====================================================== */}
 
       <div>
+
         <h1 className="text-3xl font-bold">
           🤟 Sign Language Translation
         </h1>
 
         <p className="mt-2 text-gray-500">
-          Show a sign to the camera and
-          let LinguaVerse AI recognize it.
+          Show a sign to the camera and let
+          LinguaVerse AI recognize it.
         </p>
+
       </div>
+
+
+      {/* ======================================================
+          ERROR
+      ====================================================== */}
+
+      {errorMessage && (
+
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+
+          <p className="font-semibold">
+            Detection Error
+          </p>
+
+          <p className="mt-1 text-sm">
+            {errorMessage}
+          </p>
+
+        </div>
+
+      )}
+
 
       {/* ======================================================
           WEBCAM + PREDICTION
@@ -292,35 +327,28 @@ export default function SignLanguage() {
 
       </div>
 
+
       {/* ======================================================
           COLLECTION STATUS
       ====================================================== */}
 
       {isCollecting && (
+
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
 
           <div className="flex items-center justify-between">
 
-            <div>
+            <p className="font-semibold text-blue-700">
+              🤟 Collecting gesture frames...
+            </p>
 
-              <h2 className="font-semibold text-blue-800">
-                🤟 Collecting Gesture
-              </h2>
-
-              <p className="mt-1 text-sm text-blue-600">
-                Keep your hand visible and
-                perform the gesture naturally.
-              </p>
-
-            </div>
-
-            <span className="text-lg font-bold text-blue-700">
+            <p className="font-bold text-blue-700">
               {collectedFrames}/30
-            </span>
+            </p>
 
           </div>
 
-          <div className="mt-4 h-3 overflow-hidden rounded-full bg-blue-100">
+          <div className="mt-3 h-3 overflow-hidden rounded-full bg-blue-100">
 
             <div
               className="h-full rounded-full bg-blue-600 transition-all duration-100"
@@ -333,13 +361,15 @@ export default function SignLanguage() {
 
           </div>
 
-          <p className="mt-2 text-xs text-blue-600">
-            Please hold the gesture until
-            collection is complete.
+          <p className="mt-2 text-sm text-blue-600">
+            Keep your hand clearly visible and
+            perform the gesture.
           </p>
 
         </div>
+
       )}
+
 
       {/* ======================================================
           CAMERA CONTROLS
@@ -351,6 +381,7 @@ export default function SignLanguage() {
         onStop={stopCamera}
         onCapture={handleCapture}
       />
+
 
       {/* ======================================================
           TRANSLATION + SPEECH
@@ -368,6 +399,7 @@ export default function SignLanguage() {
 
       </div>
 
+
       {/* ======================================================
           LEARNING
       ====================================================== */}
@@ -375,6 +407,7 @@ export default function SignLanguage() {
       <LearningPanel
         lessons={learning}
       />
+
 
       {/* ======================================================
           HISTORY
