@@ -7,15 +7,29 @@ import {
 
 const SEQUENCE_LENGTH = 30;
 
+const FRAME_INTERVAL = 100;
+
 export default function useWebcam() {
+  // ============================================================
+  // VIDEO
+  // ============================================================
+
   const videoRef =
     useRef<HTMLVideoElement>(null);
 
-  const streamRef =
-    useRef<MediaStream | null>(null);
+  // ============================================================
+  // STREAM
+  // ============================================================
+
+  const [stream, setStream] =
+    useState<MediaStream | null>(null);
 
   const [isRunning, setIsRunning] =
     useState(false);
+
+  // ============================================================
+  // FRAME COLLECTION
+  // ============================================================
 
   const [isCollecting, setIsCollecting] =
     useState(false);
@@ -30,10 +44,17 @@ export default function useWebcam() {
   const startCamera = useCallback(
     async () => {
       try {
-        // Avoid opening multiple camera streams
-        if (streamRef.current) {
+        // --------------------------------------------------------
+        // Prevent starting twice
+        // --------------------------------------------------------
+
+        if (stream) {
           return;
         }
+
+        // --------------------------------------------------------
+        // Request webcam
+        // --------------------------------------------------------
 
         const media =
           await navigator.mediaDevices.getUserMedia({
@@ -43,7 +64,9 @@ export default function useWebcam() {
             audio: false,
           });
 
-        streamRef.current = media;
+        // --------------------------------------------------------
+        // Attach stream
+        // --------------------------------------------------------
 
         if (videoRef.current) {
           videoRef.current.srcObject =
@@ -52,17 +75,18 @@ export default function useWebcam() {
           await videoRef.current.play();
         }
 
+        setStream(media);
+
         setIsRunning(true);
+
       } catch (error) {
         console.error(
           "Unable to access webcam:",
           error
         );
-
-        setIsRunning(false);
       }
     },
-    []
+    [stream]
   );
 
   // ============================================================
@@ -70,25 +94,40 @@ export default function useWebcam() {
   // ============================================================
 
   const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current
+    // --------------------------------------------------------
+    // Stop all tracks
+    // --------------------------------------------------------
+
+    if (stream) {
+      stream
         .getTracks()
         .forEach((track) => {
           track.stop();
         });
-
-      streamRef.current = null;
     }
+
+    // --------------------------------------------------------
+    // Clear video
+    // --------------------------------------------------------
 
     if (videoRef.current) {
       videoRef.current.srcObject =
         null;
     }
 
+    // --------------------------------------------------------
+    // Reset state
+    // --------------------------------------------------------
+
+    setStream(null);
+
     setIsRunning(false);
+
     setIsCollecting(false);
+
     setCollectedFrames(0);
-  }, []);
+
+  }, [stream]);
 
   // ============================================================
   // CAPTURE SINGLE FRAME
@@ -96,19 +135,21 @@ export default function useWebcam() {
 
   const captureFrame =
     useCallback((): string | null => {
+
       const video =
         videoRef.current;
+
+      // --------------------------------------------------------
+      // Make sure video exists
+      // --------------------------------------------------------
 
       if (!video) {
         return null;
       }
 
-      if (
-        video.readyState <
-        HTMLMediaElement.HAVE_CURRENT_DATA
-      ) {
-        return null;
-      }
+      // --------------------------------------------------------
+      // Make sure video has dimensions
+      // --------------------------------------------------------
 
       if (
         video.videoWidth === 0 ||
@@ -116,6 +157,10 @@ export default function useWebcam() {
       ) {
         return null;
       }
+
+      // --------------------------------------------------------
+      // Create canvas
+      // --------------------------------------------------------
 
       const canvas =
         document.createElement(
@@ -128,12 +173,20 @@ export default function useWebcam() {
       canvas.height =
         video.videoHeight;
 
+      // --------------------------------------------------------
+      // Canvas context
+      // --------------------------------------------------------
+
       const context =
         canvas.getContext("2d");
 
       if (!context) {
         return null;
       }
+
+      // --------------------------------------------------------
+      // Draw current video frame
+      // --------------------------------------------------------
 
       context.drawImage(
         video,
@@ -143,10 +196,18 @@ export default function useWebcam() {
         canvas.height
       );
 
+      // --------------------------------------------------------
+      // Convert to JPEG
+      //
+      // JPEG keeps the request size much
+      // smaller than PNG.
+      // --------------------------------------------------------
+
       return canvas.toDataURL(
         "image/jpeg",
-        0.85
+        0.75
       );
+
     }, []);
 
   // ============================================================
@@ -154,10 +215,14 @@ export default function useWebcam() {
   // ============================================================
 
   const collectFrames =
-    useCallback(async (): Promise<
-      string[]
-    > => {
+    useCallback(async (): Promise<string[]> => {
+
+      // --------------------------------------------------------
+      // Camera check
+      // --------------------------------------------------------
+
       if (!isRunning) {
+
         console.warn(
           "Camera is not running."
         );
@@ -165,74 +230,130 @@ export default function useWebcam() {
         return [];
       }
 
+      // --------------------------------------------------------
+      // Prevent duplicate collection
+      // --------------------------------------------------------
+
       if (isCollecting) {
+
         console.warn(
-          "Already collecting frames."
+          "Frame collection already running."
         );
 
         return [];
       }
 
+      // --------------------------------------------------------
+      // Start collection
+      // --------------------------------------------------------
+
       setIsCollecting(true);
+
       setCollectedFrames(0);
 
       const frames: string[] = [];
 
-      /*
-       * We collect 30 frames at approximately
-       * 10 frames per second.
-       *
-       * 30 frames ≈ 3 seconds.
-       */
+      try {
 
-      for (
-        let i = 0;
-        i < SEQUENCE_LENGTH;
-        i++
-      ) {
-        const frame =
-          captureFrame();
+        // ======================================================
+        // COLLECT EXACTLY 30 FRAMES
+        // ======================================================
 
-        if (frame) {
+        for (
+          let i = 0;
+          i < SEQUENCE_LENGTH;
+          i++
+        ) {
+
+          // ----------------------------------------------------
+          // Capture frame
+          // ----------------------------------------------------
+
+          const frame =
+            captureFrame();
+
+          // ----------------------------------------------------
+          // Validate frame
+          // ----------------------------------------------------
+
+          if (!frame) {
+
+            console.warn(
+              `Unable to capture frame ${i + 1}.`
+            );
+
+            continue;
+          }
+
+          // ----------------------------------------------------
+          // Store frame
+          // ----------------------------------------------------
+
           frames.push(frame);
+
+          // ----------------------------------------------------
+          // Update UI
+          // ----------------------------------------------------
 
           setCollectedFrames(
             frames.length
           );
-        }
 
-        /*
-         * Wait approximately 100 ms
-         * before collecting the next frame.
-         */
-        await new Promise<void>(
-          (resolve) => {
-            window.setTimeout(
-              resolve,
-              100
+          // ----------------------------------------------------
+          // Wait before next frame
+          // ----------------------------------------------------
+
+          if (
+            i <
+            SEQUENCE_LENGTH - 1
+          ) {
+
+            await new Promise(
+              (resolve) =>
+                setTimeout(
+                  resolve,
+                  FRAME_INTERVAL
+                )
             );
           }
+        }
+
+        // ======================================================
+        // VALIDATION
+        // ======================================================
+
+        if (
+          frames.length !==
+          SEQUENCE_LENGTH
+        ) {
+
+          console.error(
+            `Frame collection failed. Expected ${SEQUENCE_LENGTH}, received ${frames.length}.`
+          );
+
+          return [];
+        }
+
+        // --------------------------------------------------------
+        // Success
+        // --------------------------------------------------------
+
+        console.log(
+          `Successfully collected ${frames.length} frames.`
         );
+
+        return frames;
+
+      } finally {
+
+        // --------------------------------------------------------
+        // Reset collection state
+        // --------------------------------------------------------
+
+        setIsCollecting(false);
+
       }
 
-      setIsCollecting(false);
-
-      /*
-       * The backend requires exactly
-       * 30 frames.
-       */
-      if (
-        frames.length !==
-        SEQUENCE_LENGTH
-      ) {
-        console.error(
-          `Expected ${SEQUENCE_LENGTH} frames, received ${frames.length}.`
-        );
-
-        return [];
-      }
-
-      return frames;
     }, [
       isRunning,
       isCollecting,
@@ -244,17 +365,30 @@ export default function useWebcam() {
   // ============================================================
 
   useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current
-          .getTracks()
-          .forEach((track) => {
-            track.stop();
-          });
 
-        streamRef.current = null;
+    return () => {
+
+      if (videoRef.current) {
+
+        const currentStream =
+          videoRef.current
+            .srcObject as
+            | MediaStream
+            | null;
+
+        currentStream
+          ?.getTracks()
+          .forEach(
+            (track) =>
+              track.stop()
+          );
+
+        videoRef.current.srcObject =
+          null;
       }
+
     };
+
   }, []);
 
   // ============================================================
@@ -263,6 +397,8 @@ export default function useWebcam() {
 
   return {
     videoRef,
+
+    stream,
 
     isRunning,
 
