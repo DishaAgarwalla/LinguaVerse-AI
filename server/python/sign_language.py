@@ -36,25 +36,35 @@ LANDMARKS_PER_FRAME = 21
 
 VALUES_PER_LANDMARK = 3
 
+FEATURES_PER_FRAME = (
+    LANDMARKS_PER_FRAME
+    * VALUES_PER_LANDMARK
+)
+
 EXPECTED_FEATURES = (
     SEQUENCE_LENGTH
-    *
-    LANDMARKS_PER_FRAME
-    *
-    VALUES_PER_LANDMARK
+    * FEATURES_PER_FRAME
 )
 
 
 # ============================================================
 # PREDICTION SETTINGS
-#
-# These are the same values used by the working
-# predict_gesture.py.
 # ============================================================
 
 MIN_CONFIDENCE = 0.55
 
 MIN_MARGIN = 0.08
+
+
+# ============================================================
+# HAND DETECTION SETTINGS
+# ============================================================
+
+MIN_HAND_DETECTION_CONFIDENCE = 0.35
+
+MIN_HAND_PRESENCE_CONFIDENCE = 0.35
+
+MIN_TRACKING_CONFIDENCE = 0.35
 
 
 # ============================================================
@@ -134,8 +144,7 @@ def load_model():
 
     if (
         model.n_features_in_
-        !=
-        EXPECTED_FEATURES
+        != EXPECTED_FEATURES
     ):
 
         raise ValueError(
@@ -179,11 +188,14 @@ def create_detector():
 
             num_hands=1,
 
-            min_hand_detection_confidence=0.5,
+            min_hand_detection_confidence=
+            MIN_HAND_DETECTION_CONFIDENCE,
 
-            min_hand_presence_confidence=0.5,
+            min_hand_presence_confidence=
+            MIN_HAND_PRESENCE_CONFIDENCE,
 
-            min_tracking_confidence=0.5,
+            min_tracking_confidence=
+            MIN_TRACKING_CONFIDENCE,
         )
     )
 
@@ -213,11 +225,7 @@ def decode_image(image_data):
         )
 
     # --------------------------------------------------------
-    # Handle data URLs:
-    #
-    # data:image/png;base64,.....
-    #
-    # data:image/jpeg;base64,.....
+    # Remove data URL prefix
     # --------------------------------------------------------
 
     if "," in image_data:
@@ -261,9 +269,6 @@ def decode_image(image_data):
 
 # ============================================================
 # EXTRACT LANDMARKS
-#
-# 21 landmarks × 3 values
-# = 63 values per frame
 # ============================================================
 
 def extract_landmarks(
@@ -292,7 +297,8 @@ def extract_landmarks(
 # ============================================================
 # NORMALIZE SEQUENCE
 #
-# THIS MUST MATCH predict_gesture.py
+# IMPORTANT:
+# This must remain compatible with the trained model.
 # ============================================================
 
 def normalize_sequence(
@@ -303,12 +309,6 @@ def normalize_sequence(
         sequence,
         dtype=np.float32
     )
-
-    # --------------------------------------------------------
-    # Shape:
-    #
-    # 30 × 21 × 3
-    # --------------------------------------------------------
 
     sequence = sequence.reshape(
         SEQUENCE_LENGTH,
@@ -377,13 +377,19 @@ def normalize_sequence(
 
 
 # ============================================================
-# DETECT LANDMARK SEQUENCE
+# EXTRACT SEQUENCE FEATURES
 #
-# Input:
-# 30 image frames
+# IMPORTANT CHANGE:
 #
-# Output:
-# 30 × 63 landmark values
+# If MediaPipe misses the hand in a frame:
+#
+# 1. Reuse the previous valid frame.
+#
+# 2. If the first frame has no hand, search forward
+#    for the first valid frame.
+#
+# This prevents one temporary tracking failure from
+# destroying the complete 30-frame sequence.
 # ============================================================
 
 def extract_sequence_features(
@@ -403,18 +409,24 @@ def extract_sequence_features(
 
     timestamp = 0
 
+    previous_features = None
+
+    missed_frames = 0
+
+    MAX_MISSED_FRAMES = 10
+
     # ========================================================
     # PROCESS EVERY FRAME
     # ========================================================
 
-    for frame_data in frames:
+    for frame_index, frame_data in enumerate(frames):
 
         frame = decode_image(
             frame_data
         )
 
         # ----------------------------------------------------
-        # Convert BGR → RGB
+        # Convert BGR -> RGB
         # ----------------------------------------------------
 
         rgb_frame = cv2.cvtColor(
@@ -436,8 +448,6 @@ def extract_sequence_features(
 
         # ----------------------------------------------------
         # Timestamp
-        #
-        # Must increase for VIDEO mode.
         # ----------------------------------------------------
 
         timestamp += 33
@@ -454,42 +464,99 @@ def extract_sequence_features(
         )
 
         # ----------------------------------------------------
-        # Require a hand
+        # HAND DETECTED
         # ----------------------------------------------------
 
-        if not results.hand_landmarks:
+        if results.hand_landmarks:
 
-            raise ValueError(
-                "No hand detected in one "
-                "or more frames. Please keep "
-                "your hand visible."
+            hand = (
+                results.hand_landmarks[0]
             )
 
+            features = extract_landmarks(
+                hand
+            )
+
+            if len(features) != FEATURES_PER_FRAME:
+
+                raise ValueError(
+                    "Invalid landmark feature count. "
+                    f"Expected {FEATURES_PER_FRAME}, "
+                    f"got {len(features)}."
+                )
+
+            previous_features = features
+
+            sequence_features.append(
+                features
+            )
+
+            continue
+
         # ----------------------------------------------------
-        # Use first detected hand
+        # HAND NOT DETECTED
         # ----------------------------------------------------
 
-        hand = (
-            results.hand_landmarks[0]
+        missed_frames += 1
+
+        print(
+            f"⚠️ Hand not detected in frame "
+            f"{frame_index + 1}/{SEQUENCE_LENGTH}",
+            file=sys.stderr
         )
 
         # ----------------------------------------------------
-        # Extract 63 values
+        # We have a previous valid frame
+        #
+        # Reuse it.
         # ----------------------------------------------------
 
-        features = extract_landmarks(
-            hand
-        )
+        if previous_features is not None:
 
-        if len(features) != 63:
-
-            raise ValueError(
-                "Invalid landmark feature count. "
-                f"Expected 63, got {len(features)}."
+            sequence_features.append(
+                previous_features.copy()
             )
 
-        sequence_features.append(
-            features
+        else:
+
+            # ------------------------------------------------
+            # No previous frame exists.
+            #
+            # Use zero landmarks temporarily.
+            # We will try to recover on later frames.
+            # ------------------------------------------------
+
+            sequence_features.append(
+                [0.0] * FEATURES_PER_FRAME
+            )
+
+        # ----------------------------------------------------
+        # Too many consecutive misses
+        # ----------------------------------------------------
+
+        if (
+            missed_frames
+            >=
+            MAX_MISSED_FRAMES
+            and
+            previous_features is None
+        ):
+
+            raise ValueError(
+                "Unable to detect a hand in the "
+                "camera sequence. Please place your "
+                "hand clearly inside the camera frame."
+            )
+
+    # ========================================================
+    # CHECK RESULT
+    # ========================================================
+
+    if len(sequence_features) != SEQUENCE_LENGTH:
+
+        raise ValueError(
+            "Unable to build complete "
+            "30-frame landmark sequence."
         )
 
     return sequence_features
@@ -546,9 +613,7 @@ def predict_gesture(
     # Create MediaPipe detector
     # --------------------------------------------------------
 
-    detector = (
-        create_detector()
-    )
+    detector = create_detector()
 
     try:
 
@@ -611,6 +676,8 @@ def predict_gesture(
 
         second_index = (
             sorted_indices[1]
+            if len(sorted_indices) > 1
+            else sorted_indices[0]
         )
 
         # ====================================================
@@ -848,10 +915,6 @@ def main():
 
         # ====================================================
         # OUTPUT JSON ONLY
-        #
-        # IMPORTANT:
-        # Node.js reads stdout and parses it.
-        # Therefore don't print debugging messages here.
         # ====================================================
 
         print(
