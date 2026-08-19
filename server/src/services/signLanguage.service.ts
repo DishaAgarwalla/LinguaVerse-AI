@@ -15,7 +15,9 @@ export interface TranslationResult {
 export interface DetectionResponse {
   success: boolean;
   message?: string;
+
   recognition: RecognitionResult;
+
   translations: TranslationResult[];
 
   details?: {
@@ -35,24 +37,10 @@ const SEQUENCE_LENGTH = 30;
 
 
 // ============================================================
-// PYTHON PATH
+// PYTHON EXECUTABLE
 // ============================================================
 
 const getPythonExecutable = (): string => {
-  /**
-   * When the Node server is started while the Python virtual
-   * environment is active, "python" will normally work.
-   *
-   * However, Node does not automatically know which terminal
-   * environment was activated.
-   *
-   * Therefore we first check for:
-   *
-   * server/venv/Scripts/python.exe
-   *
-   * and then fall back to "python".
-   */
-
   const virtualEnvironmentPython = path.join(
     process.cwd(),
     "venv",
@@ -69,7 +57,7 @@ const getPythonExecutable = (): string => {
 
 
 // ============================================================
-// PYTHON SCRIPT PATH
+// PYTHON SCRIPT
 // ============================================================
 
 const getPythonScript = (): string => {
@@ -105,22 +93,8 @@ export const detectSign = async (
 ): Promise<DetectionResponse> => {
 
   // ==========================================================
-  // VALIDATE INPUT
+  // NORMALIZE INPUT
   // ==========================================================
-
-  /**
-   * The existing controller calls this value "image".
-   *
-   * For the new sequence-based system:
-   *
-   * image = string[]
-   *
-   * containing exactly 30 base64 frames.
-   *
-   * We temporarily support a single string as well so the
-   * service does not immediately crash if an older frontend
-   * request is sent.
-   */
 
   const frames: string[] = Array.isArray(image)
     ? image
@@ -128,7 +102,7 @@ export const detectSign = async (
 
 
   // ==========================================================
-  // FRAME COUNT
+  // VALIDATE FRAME COUNT
   // ==========================================================
 
   if (frames.length !== SEQUENCE_LENGTH) {
@@ -156,7 +130,7 @@ export const detectSign = async (
 
 
   // ==========================================================
-  // PYTHON SCRIPT
+  // PATHS
   // ==========================================================
 
   validatePythonScript();
@@ -166,6 +140,11 @@ export const detectSign = async (
 
   const pythonScript =
     getPythonScript();
+
+
+  console.log(
+    `🤟 Sending ${frames.length} frames to Python AI...`
+  );
 
 
   // ==========================================================
@@ -178,7 +157,7 @@ export const detectSign = async (
 
 
   // ==========================================================
-  // EXECUTE PYTHON
+  // START PYTHON
   // ==========================================================
 
   return new Promise<DetectionResponse>(
@@ -186,53 +165,59 @@ export const detectSign = async (
 
       const python = spawn(
         pythonExecutable,
-        [
-          pythonScript,
-        ],
+        [pythonScript],
         {
           cwd: process.cwd(),
+
           windowsHide: true,
+
+          // IMPORTANT:
+          // Force Python input/output encoding to UTF-8.
+          env: {
+            ...process.env,
+            PYTHONIOENCODING: "utf-8",
+            PYTHONUTF8: "1",
+          },
         }
       );
 
 
       // ======================================================
-      // OUTPUT
+      // OUTPUT BUFFERS
       // ======================================================
 
       let stdout = "";
-
       let stderr = "";
 
 
       // ======================================================
-      // COLLECT STDOUT
+      // STDOUT
       // ======================================================
 
       python.stdout.on(
         "data",
         (chunk: Buffer) => {
 
-          stdout += chunk.toString();
+          stdout += chunk.toString("utf8");
         }
       );
 
 
       // ======================================================
-      // COLLECT STDERR
+      // STDERR
       // ======================================================
 
       python.stderr.on(
         "data",
         (chunk: Buffer) => {
 
-          stderr += chunk.toString();
+          stderr += chunk.toString("utf8");
         }
       );
 
 
       // ======================================================
-      // PYTHON ERROR
+      // PYTHON PROCESS ERROR
       // ======================================================
 
       python.on(
@@ -249,21 +234,26 @@ export const detectSign = async (
 
 
       // ======================================================
-      // PYTHON FINISHED
+      // PYTHON PROCESS FINISHED
       // ======================================================
 
       python.on(
         "close",
         (code) => {
 
-          // -----------------------------------------------
-          // Python returned an error
-          // -----------------------------------------------
+          console.log(
+            `🐍 Python process exited with code ${code}`
+          );
+
+
+          // ==================================================
+          // PYTHON ERROR
+          // ==================================================
 
           if (code !== 0) {
 
             console.error(
-              "Python sign detection error:"
+              "❌ Python sign detection error:"
             );
 
             if (stderr.trim()) {
@@ -282,9 +272,9 @@ export const detectSign = async (
           }
 
 
-          // -----------------------------------------------
-          // Empty response
-          // -----------------------------------------------
+          // ==================================================
+          // EMPTY OUTPUT
+          // ==================================================
 
           if (!stdout.trim()) {
 
@@ -298,9 +288,9 @@ export const detectSign = async (
           }
 
 
-          // -----------------------------------------------
-          // Parse JSON
-          // -----------------------------------------------
+          // ==================================================
+          // PARSE PYTHON JSON
+          // ==================================================
 
           try {
 
@@ -310,9 +300,9 @@ export const detectSign = async (
               ) as DetectionResponse;
 
 
-            // ---------------------------------------------
-            // Validate response
-            // ---------------------------------------------
+            // =================================================
+            // VALIDATE RESPONSE
+            // =================================================
 
             if (
               typeof result.success !==
@@ -329,9 +319,9 @@ export const detectSign = async (
             }
 
 
-            // ---------------------------------------------
-            // Python reported an error
-            // ---------------------------------------------
+            // =================================================
+            // PYTHON RETURNED ERROR
+            // =================================================
 
             if (!result.success) {
 
@@ -346,18 +336,20 @@ export const detectSign = async (
             }
 
 
-            // ---------------------------------------------
-            // Success
-            // ---------------------------------------------
+            // =================================================
+            // SUCCESS
+            // =================================================
 
-            resolve(
-              result
+            console.log(
+              "✅ Python sign detection successful."
             );
+
+            resolve(result);
 
           } catch (error) {
 
             console.error(
-              "Unable to parse Python response:"
+              "❌ Unable to parse Python response:"
             );
 
             console.error(
@@ -390,11 +382,12 @@ export const detectSign = async (
 
 
       // ======================================================
-      // SEND DATA TO PYTHON
+      // SEND JSON TO PYTHON
       // ======================================================
 
       python.stdin.write(
-        payload
+        payload,
+        "utf8"
       );
 
       python.stdin.end();

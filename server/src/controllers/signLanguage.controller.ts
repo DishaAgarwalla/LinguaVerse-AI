@@ -7,25 +7,49 @@ export const detectSignController = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { image } = req.body;
+    const { image, frames } = req.body;
 
-    if (!image) {
+    const receivedFrames = frames ?? image;
+
+    if (!Array.isArray(receivedFrames)) {
       res.status(400).json({
         success: false,
-        message: "Image is required.",
+        message: "30 camera frames are required.",
       });
       return;
     }
 
-    const result = await detectSign(image);
+    if (receivedFrames.length !== 30) {
+      res.status(400).json({
+        success: false,
+        message: `Exactly 30 frames are required. Received ${receivedFrames.length}.`,
+      });
+      return;
+    }
+
+    console.log(
+      `🤟 Received ${receivedFrames.length} frames for sign detection.`
+    );
+
+    const result = await detectSign(
+      receivedFrames
+    );
 
     res.status(200).json(result);
+
   } catch (error) {
-    console.error(error);
+
+    console.error(
+      "❌ Sign language detection error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
-      message: "Unable to detect sign language.",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to detect sign language.",
     });
   }
 };
